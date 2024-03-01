@@ -36,7 +36,7 @@ Overall, the integration of AI in medicine showcases promising advancements in c
 #### Input
 `python PubMedSummarizer.py "digital mental health interventions"`
 #### Intermediate steps
-[here](example/gpt_messages.txt)
+[here](example/mental_health.txt)
 #### Output
 "Digital mental health interventions, including those delivered via the web and apps, have shown promise in improving access to mental health treatment for various populations, such as college students and caregivers of older adults (PMID: 31333198, 32411643). These interventions have been effective in addressing common mental health issues like depression, anxiety, stress, and improving psychological well-being (PMID: 31333198, 37001253). The use of digital tools, such as cognitive behavioral therapy delivered online, has demonstrated positive outcomes in reducing symptoms and improving satisfaction with life (PMID: 37001253).
 
