@@ -12,18 +12,18 @@ Automatically search for information in PubMed, obtain articles and/or abstracts
 7. GPT-3.5 gets all these article chunks, cosine similarity scores, and abstracts along with their PMIDs and in response generates brief summary with relevant information (obtained only from these abstracts and articles), answering to the initial query (point 1) and provides corresponding PMIDs for each piece of information it writes in the answer.
 
 ## Examples
-#### AI applications in medicine
-##### Input
+### AI applications in medicine
+#### Input
 `python PubMedSummarizer.py "AI applications in medicine"`
-##### Optimized query
+#### Optimized query
 `"Artificial Intelligence AND Medicine"`
-##### Abstracts fetched from PubMed
+#### Abstracts fetched from PubMed
 [here](example/abstracts.txt)
-##### Relevant articles
+#### Relevant articles
 `33811123 31939856 32250084 33509373`
-##### Context chunks from articles
+#### Context chunks from articles
 [here](example/context_chunks.txt)
-##### Output
+#### Output
 
 "Artificial intelligence (AI) is revolutionizing cancer research and personalized clinical care by leveraging high-dimensional datasets and innovative deep learning architectures. This advancement in AI has led to applications in detecting and classifying cancer, molecular characterization of tumors, drug discovery, repurposing, and predicting treatment outcomes (PMID: 33811123). The field of anesthesiology stands to benefit from AI through applications in perioperative and intensive care, pain management, and drug delivery and discovery. AI technologies have the potential to augment clinical judgment and skills, improving clinical endpoints like depth of anesthesia (PMID: 31939856).
 
@@ -32,12 +32,12 @@ Moreover, in forensic medicine, the integration of AI technology has shown feasi
 In nuclear medicine imaging, AI and machine learning approaches are increasingly utilized for automated image reading, correlation with clinical outcomes, and technological applications in image processing. These methods aid in tumor imaging, quantification of tumor volume, segmentation, and classification of pathological foci, ultimately improving clinical decision-making and patient prognosis (PMID: 33509373).
 Overall, the integration of AI in medicine showcases promising advancements in cancer research, anesthesiology, forensic medicine, and nuclear medicine imaging, indicating a transformative shift towards more efficient, precise, and personalized healthcare practices."
 
-#### digital mental health interventions
-##### Input
+### digital mental health interventions
+#### Input
 `python PubMedSummarizer.py "digital mental health interventions"`
-##### Intermediate steps
+#### Intermediate steps
 [here](example/gpt_messages.txt)
-##### Output
+#### Output
 "Digital mental health interventions, including those delivered via the web and apps, have shown promise in improving access to mental health treatment for various populations, such as college students and caregivers of older adults (PMID: 31333198, 32411643). These interventions have been effective in addressing common mental health issues like depression, anxiety, stress, and improving psychological well-being (PMID: 31333198, 37001253). The use of digital tools, such as cognitive behavioral therapy delivered online, has demonstrated positive outcomes in reducing symptoms and improving satisfaction with life (PMID: 37001253).
 
 Additionally, the effectiveness of digital mental health interventions for adolescents and young people has been explored, showing potential in addressing mental health disorders early in life and reaching underserved clinical populations (PMID: 33913817). Computerized cognitive behavioral therapy has been effective in managing anxiety and depression in this population, emphasizing the importance of interventions with an in-person element or professional involvement for greater effectiveness (PMID: 33913817).
