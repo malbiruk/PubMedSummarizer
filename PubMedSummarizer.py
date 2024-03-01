@@ -519,6 +519,8 @@ def main(user_query: str,
     '''
     Search and summarize info from PubMed using GPT.
     '''
+    if not os.path.exists('cache'):
+        os.makedirs('cache')
 
     messages = [{'role': 'system', 'content': PROMPT}]
     optimized_queries = gpt_process_query(messages, user_query)
