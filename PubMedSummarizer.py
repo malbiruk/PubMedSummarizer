@@ -470,11 +470,12 @@ def gpt_generate_summary(messages: list,
                 prompt += f'\nCosine Similarity Scores: {v[1][pmid]}\n\n'
             else:
                 prompt += f'Abstract:\n{cont}\n\n'
-
+              
+    # available context space
     av_cont_space = int(16300 * 4 - (len(PROMPT) + 300) / 4)
     if len(prompt) > av_cont_space:
         prompt = prompt[:av_cont_space]
-        logging.warning('Truncated prompt in order to fin in context window.')
+        logging.warning('Truncated prompt in order to fit in context window.')
 
     messages = [messages[0]]
     messages.append({'role': 'user', 'content': prompt})
