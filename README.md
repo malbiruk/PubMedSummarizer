@@ -10,6 +10,7 @@ Automatically search for information in PubMed, obtain articles and/or abstracts
 5. The program finds full articles of these relevant PMIDs in PMC and Sci-Hub if not found in PMC
 6. The program tokenizes articles by sentences and embeds it as well as query provided in the 2nd point and performs semantic search, returning top 5 found context chunks with their score (cosine similarity) from each of the articles. Also if can't find/download article, it just returns the abstract of corresponding article.
 7. GPT-3.5 gets all these article chunks, cosine similarity scores, and abstracts along with their PMIDs and in response generates brief summary with relevant information (obtained only from these abstracts and articles), answering to the initial query (point 1) and provides corresponding PMIDs for each piece of information it writes in the answer.
+8. After that GPT works just as a chat-bot with all these context
 
 ## Examples
 ### AI applications in medicine

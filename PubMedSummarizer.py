@@ -75,6 +75,7 @@ Each time you will be called, you should perform one of the following actions \
 CREATE_QUERY
 IDENTIFY_RELEVANT
 WRITE_SUMMARY
+CONTINUE_CHAT
 
 Now I will describe each action.
 
@@ -108,7 +109,8 @@ PMID, line break, abstract of the article with this PMID, two line breaks, \
 next PMID with abstract and so on.
 Your task will be to identify the most relevant articles to the provided \
 query by the abstracts. YOUR ANSWER WILL CONTAIN ONLY PMIDs SEPARATED BY SPACES. \
-No other text, just: PMID1 PMID2 PMID3
+No other text, just:
+PMID1 PMID2 PMID3
 
 Example:
 input: "IDENTIFY_RELEVANT
@@ -169,6 +171,9 @@ for your summary/answer. YOUR SUMMARY SHOULD BE ABOUT 250-300 WORDS. \
 USE ONLY INFORMATION PROVIDED IN THE INPUT.
 Example of your final answer format:
 Although non-avian dinosaurs dominated terrestrial ecosystems until the end-Cretaceous, both a marked increase of extinction and a decrease in their ability to replace extinct species led dinosaurs to decline well before the K/Pg extinction (PMID: 34188028). Even though the latest Cretaceous dinosaur fossil record is geographically dominated by Laurasian taxa, the diversity patterns observed here are based on continent-scale samples that reflect a substantial part of latest Cretaceous dinosaur global diversity. Long-term environmental changes led to restructuring of terrestrial ecosystems that made dinosaurs particularly prone to extinction (PMID: 23112149). These results are also consistent with modelling studies of ecological food-webs (PMID: 22549833) and suggest that loss of key herbivorous dinosaurs would have made terminal Maastrichtian ecosystems—in contrast with ecosystems from earlier in the Late Cretaceous (Campanian)—more susceptible to cascading extinctions by an external forcing mechanism. We propose that a combination of global climate cooling, the diversity of herbivores, and age-dependent extinction had a negative impact on dinosaur extinction in the Late Cretaceous; these factors impeded their recovery from the final catastrophic event (PMID: 34188028).
+
+CONTINUE_CHAT
+If a message starts with CONTINUE_CHAT, than just support the dialogue using context you already have.
 """.strip()
 
 
@@ -522,6 +527,21 @@ def messages_to_human_readable(messages: list) -> str:
         [i['content'].strip() for i in messages[1:]])
 
 
+def gpt_continue_chat(messages: list,
+                      model=GPT_MODEL,
+                      temperature=.7) -> str:
+    '''
+    just support the dialogue using input() from user
+    '''
+    while True:
+        user_query = input('User: ')
+        prompt = f'CONTINUE_CHAT\n{user_query}'
+        messages.append({'role': 'user', 'content': prompt})
+        answer = chat_completion_request(messages, model, temperature)
+        print(f'GPT: {answer}\n')
+        messages.append({'role': 'assistant', 'content': answer})
+
+
 def main(user_query: str,
          pmid_list: list = None,
          reviews: bool = False) -> None:
@@ -584,6 +604,8 @@ def main(user_query: str,
 
     print()
     print(gpt_summary)
+    print()
+    gpt_continue_chat(messages)
 
 
 # %%
