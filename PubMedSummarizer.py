@@ -470,12 +470,12 @@ def gpt_generate_summary(messages: list,
                 prompt += f'\nCosine Similarity Scores: {v[1][pmid]}\n\n'
             else:
                 prompt += f'Abstract:\n{cont}\n\n'
-              
+
     # available context space
     av_cont_space = int(16300 * 4 - (len(PROMPT) + 300) / 4)
     if len(prompt) > av_cont_space:
         prompt = prompt[:av_cont_space]
-        logging.warning('Truncated prompt in order to fit in context window.')
+        logger.warning('Truncated prompt in order to fit in context window.')
 
     messages = [messages[0]]
     messages.append({'role': 'user', 'content': prompt})
@@ -512,6 +512,14 @@ def extract_terms(pubmed_query):
     result = re.sub(pattern, '', result).strip()
 
     return result
+
+
+def messages_to_human_readable(messages: list) -> str:
+    '''
+    get only content of messages without system prompt and with nice separators
+    '''
+    return '\n\n----------\n\n'.join(
+        [i['content'].strip() for i in messages[1:]])
 
 
 def main(user_query: str,
@@ -560,8 +568,9 @@ def main(user_query: str,
                     for k, v in context_chunks.items()}
         query_to_context[query] = (contexts, cosine_similarity_scores)
 
-    with open('gpt_messages_0.txt', 'w', encoding='utf-8') as f:
-        f.write(str(messages))
+    with open('gpt_messages.txt', 'w', encoding='utf-8') as f:
+        f.write(messages_to_human_readable(messages)
+                + '\n\n----------\n\n')
 
     gpt_summary, messages = gpt_generate_summary(messages,
                                                  user_query,
@@ -570,8 +579,8 @@ def main(user_query: str,
     with open('gpt_summary.txt', 'w', encoding='utf-8') as f:
         f.write(gpt_summary)
 
-    with open('gpt_messages_1.txt', 'w', encoding='utf-8') as f:
-        f.write(str(messages))
+    with open('gpt_messages.txt', 'a', encoding='utf-8') as f:
+        f.write(messages_to_human_readable(messages))
 
     print()
     print(gpt_summary)
