@@ -33,6 +33,10 @@ from sentence_transformers import SentenceTransformer, util
 
 console = Console(soft_wrap=True)
 
+TOKENS_USED = {"completion_tokens": 0,
+               "prompt_tokens": 0,
+               "total_tokens": 0}
+
 # logging.root.handlers = []
 
 
@@ -110,7 +114,7 @@ If a message starts with IDENTIFY_RELEVANT, one of the queries you created \
 previously will follow it, then the next structure will be passed to you: \
 PMID, line break, abstract of the article with this PMID, two line breaks, \
 next PMID with abstract and so on.
-Your task will be to identify the most relevant articles to the provided \
+Your task will be to identify relevant articles to the provided \
 query by the abstracts. YOUR ANSWER WILL CONTAIN ONLY PMIDs SEPARATED BY SPACES. \
 No other text, just:
 PMID1 PMID2 PMID3
@@ -415,6 +419,10 @@ def chat_completion_request(messages,
             messages=messages,
             temperature=temperature
         )
+        for key, value in dict(completion.usage).items():
+            if key in TOKENS_USED:
+                TOKENS_USED[key] += value
+
         return completion.choices[0].message.content
     except Exception as e:
         logger.error("Unable to generate ChatCompletion response")
@@ -530,6 +538,26 @@ def messages_to_human_readable(messages: list) -> str:
         [i['content'].strip() for i in messages[1:]])
 
 
+def tokens_to_prices(tokens: dict) -> dict:
+    '''
+    convert n_tokens to prices
+    prices last updated on Mar 4, 2024
+    '''
+    final_price = {}
+    prices = {'gpt-3.5-turbo-0125': {'input': .5, 'output': 1.5},
+              'gpt-4': {'input': 30, 'output': 60}}
+    if prices.get(GPT_MODEL):
+        final_price['output'] = tokens['completion_tokens'] / \
+            1000000 * prices[GPT_MODEL]['output']
+        final_price['input'] = tokens['prompt_tokens'] / \
+            1000000 * prices[GPT_MODEL]['input']
+        final_price['total'] = final_price['output'] + \
+            final_price['input']
+
+        return final_price
+    return
+
+
 def gpt_continue_chat(messages: list,
                       model=GPT_MODEL,
                       temperature=.7) -> list:
@@ -548,7 +576,12 @@ def gpt_continue_chat(messages: list,
             console.print(f'\n[bold green]GPT:[/] {answer}\n')
             messages.append({'role': 'assistant', 'content': answer})
     except KeyboardInterrupt:
-        console.print('\nExiting...', style='yellow')
+        console.print('\nExiting...\n', style='yellow')
+        console.print(f'Tokens used: {TOKENS_USED}', style='yellow')
+        prices = tokens_to_prices(TOKENS_USED)
+        if prices:
+            console.print(f'$ spent: {prices}',
+                          style='yellow')
         return messages
 
 
