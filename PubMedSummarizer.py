@@ -529,17 +529,34 @@ def messages_to_human_readable(messages: list) -> str:
 
 def gpt_continue_chat(messages: list,
                       model=GPT_MODEL,
-                      temperature=.7) -> str:
+                      temperature=.7) -> list:
     '''
     just support the dialogue using input() from user
     '''
-    while True:
-        user_query = input('User: ')
-        prompt = f'CONTINUE_CHAT\n{user_query}'
-        messages.append({'role': 'user', 'content': prompt})
-        answer = chat_completion_request(messages, model, temperature)
-        print(f'GPT: {answer}\n')
-        messages.append({'role': 'assistant', 'content': answer})
+    print("Enter/Paste your content. "
+          "Press Enter and Ctrl-D to save it. "
+          "Press Ctrl-C to exit.\n")
+
+    try:
+        while True:
+            contents = []
+            while True:
+                try:
+                    if not contents:
+                        line = input("User: ")
+                    else:
+                        line = input()
+                except EOFError:
+                    break
+                contents.append(line)
+            prompt = 'CONTINUE_CHAT\n' + '\n'.join(contents)
+            messages.append({'role': 'user', 'content': prompt})
+            print('\ngetting response...')
+            answer = chat_completion_request(messages, model, temperature)
+            print(f'\nGPT: {answer}\n')
+            messages.append({'role': 'assistant', 'content': answer})
+    except KeyboardInterrupt:
+        return messages
 
 
 def main(user_query: str,
@@ -599,13 +616,12 @@ def main(user_query: str,
     with open('gpt_summary.txt', 'w', encoding='utf-8') as f:
         f.write(gpt_summary)
 
-    with open('gpt_messages.txt', 'a', encoding='utf-8') as f:
-        f.write(messages_to_human_readable(messages))
-
     print()
     print(gpt_summary)
     print()
-    gpt_continue_chat(messages)
+    messages = gpt_continue_chat(messages)
+    with open('gpt_messages.txt', 'a', encoding='utf-8') as f:
+        f.write(messages_to_human_readable(messages))
 
 
 # %%
