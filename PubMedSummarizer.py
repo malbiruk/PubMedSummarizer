@@ -65,7 +65,7 @@ progress_bar = Progress(
 
 GPT_MODEL = 'gpt-3.5-turbo-0125'
 CLIENT = OpenAI(api_key=OPENAI_API_KEY)
-EMBEDDER = SentenceTransformer('msmarco-distilbert-base-v4')
+EMBEDDER = SentenceTransformer('dmis-lab/biobert-base-cased-v1.1')
 # embedder_mpnet = SentenceTransformer('all-mpnet-base-v2')
 CURRENT_DATE = datetime.now().strftime('%B %-d, %Y')
 
