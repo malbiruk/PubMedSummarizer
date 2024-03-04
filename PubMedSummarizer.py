@@ -585,7 +585,13 @@ def gpt_continue_chat(messages: list,
 
 def main(user_query: str,
          pmid_list: list = None,
-         reviews: bool = False) -> None:
+         reviews: bool = False,
+         n_articles: int = 10,
+         n_chunks: int = 5,
+         chunk_size: int = 6,
+         overlap: int = 2,
+         email: str = 'fiyefiyefiye@gmail.com'
+         ) -> None:
     '''
     Search and summarize info from PubMed using GPT.
     '''
@@ -601,8 +607,8 @@ def main(user_query: str,
 
     for q in optimized_queries:
         abstracts = get_abstracts(q,
-                                  n_res=10,
-                                  email='fiyefiyefiye@gmail.com',
+                                  n_res=n_articles,
+                                  email=email,
                                   pmid_list=pmid_list,
                                   reviews=reviews)
         if not abstracts:
@@ -622,9 +628,9 @@ def main(user_query: str,
             get_context_from_articles(query,
                                       EMBEDDER,
                                       articles,
-                                      n_res=5,
-                                      chunk_size=6,
-                                      overlap=2))
+                                      n_res=n_chunks,
+                                      chunk_size=chunk_size,
+                                      overlap=overlap))
         contexts = {k: abstracts[k] if v is None else v
                     for k, v in context_chunks.items()}
         query_to_context[query] = (contexts, cosine_similarity_scores)
@@ -655,9 +661,26 @@ if __name__ == '__main__':
         formatter_class=RichHelpFormatter
     )
     parser.add_argument("user_query", type=str, help="User query string")
-    parser.add_argument("--pmid_list", nargs="*", type=int, default=None,
+    parser.add_argument("-p", "--pmid_list", nargs="*", type=int, default=None,
                         help="List of PMIDs")
-    parser.add_argument('--reviews', action='store_true',
+    parser.add_argument('-r', '--reviews', action='store_true',
                         help='find only review articles')
+    parser.add_argument(
+        '-a', '--n_articles', type=int, default=10,
+        help='retrieve top {n} articles from PubMed per query (default=10)')
+    parser.add_argument(
+        '-n', '--n_chunks', type=int, default=5,
+        help='pass top {n} chunks from semantic search in article to context '
+        '(default=5)')
+    parser.add_argument('-с', '--chunk_size', type=int, default=6,
+                        help='context chunk - {n} sentences (default=6)')
+    parser.add_argument(
+        '-o', '--overlap', type=int, default=2,
+        help='overlap between chunks (should be 20-30% of chunk size) '
+        '(default=2)')
+    parser.add_argument(
+        '-e', '--email', type=str, default='fiyefiyefiye@gmail.com',
+        help='email address for Entrez calls')
+
     args = parser.parse_args()
     main(**vars(args))
