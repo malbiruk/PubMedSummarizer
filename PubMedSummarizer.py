@@ -22,6 +22,7 @@ import torch
 from Bio import Entrez, Medline
 from my_api_keys import OPENAI_API_KEY
 from openai import OpenAI
+from rich.console import Console
 from rich.logging import RichHandler
 from rich.progress import (BarColumn, MofNCompleteColumn, Progress,
                            ProgressColumn, SpinnerColumn, Text, TextColumn,
@@ -29,6 +30,8 @@ from rich.progress import (BarColumn, MofNCompleteColumn, Progress,
 from rich_argparse import RichHelpFormatter
 from scidownl import scihub_download
 from sentence_transformers import SentenceTransformer, util
+
+console = Console(soft_wrap=True)
 
 # logging.root.handlers = []
 
@@ -533,9 +536,9 @@ def gpt_continue_chat(messages: list,
     '''
     just support the dialogue using input() from user
     '''
-    print("Enter/Paste your content. "
+    console.print("[Enter/Paste your content. "
           "Press Enter and Ctrl-D to save it. "
-          "Press Ctrl-C to exit.\n")
+          "Press Ctrl-C to exit.]\n", style='yellow')
 
     try:
         while True:
@@ -543,19 +546,20 @@ def gpt_continue_chat(messages: list,
             while True:
                 try:
                     if not contents:
-                        line = input("User: ")
+                        line = console.input("[bold magenta]User:[/] ")
                     else:
-                        line = input()
+                        line = console.input()
                 except EOFError:
                     break
                 contents.append(line)
             prompt = 'CONTINUE_CHAT\n' + '\n'.join(contents)
             messages.append({'role': 'user', 'content': prompt})
-            print('\ngetting response...')
+            console.print('\ngetting response...', style='yellow')
             answer = chat_completion_request(messages, model, temperature)
-            print(f'\nGPT: {answer}\n')
+            console.print(f'\n[bold green]GPT:[/] {answer}\n')
             messages.append({'role': 'assistant', 'content': answer})
     except KeyboardInterrupt:
+        console.print('\nExiting...', style='yellow')
         return messages
 
 
@@ -616,9 +620,9 @@ def main(user_query: str,
     with open('gpt_summary.txt', 'w', encoding='utf-8') as f:
         f.write(gpt_summary)
 
-    print()
-    print(gpt_summary)
-    print()
+    console.print()
+    console.print(f'[bold green]GPT:[/] {gpt_summary}')
+    console.print()
     messages = gpt_continue_chat(messages)
     with open('gpt_messages.txt', 'a', encoding='utf-8') as f:
         f.write(messages_to_human_readable(messages))
