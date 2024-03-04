@@ -536,22 +536,11 @@ def gpt_continue_chat(messages: list,
     '''
     just support the dialogue using input() from user
     '''
-    console.print("[Enter/Paste your content. "
-          "Press Enter and Ctrl-D to save it. "
-          "Press Ctrl-C to exit.]\n", style='yellow')
-
     try:
         while True:
             contents = []
-            while True:
-                try:
-                    if not contents:
-                        line = console.input("[bold magenta]User:[/] ")
-                    else:
-                        line = console.input()
-                except EOFError:
-                    break
-                contents.append(line)
+            line = console.input("[bold magenta]User:[/] ")
+            contents.append(line)
             prompt = 'CONTINUE_CHAT\n' + '\n'.join(contents)
             messages.append({'role': 'user', 'content': prompt})
             console.print('\ngetting response...', style='yellow')
