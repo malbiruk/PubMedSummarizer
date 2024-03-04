@@ -192,10 +192,8 @@ def initialize_logging(level=logging.INFO, folder: str = '.') -> None:
     logger_ = logging.getLogger(__name__)
     logger_.setLevel(level)
     filehandler = logging.FileHandler(f'{folder}/out.log')
-    filehandler.setFormatter(logging.Formatter())
     filehandler.setLevel(level)
     richhandler = RichHandler(show_path=False)
-    richhandler.setFormatter(logging.Formatter())
     richhandler.setLevel(level)
     logger_.addHandler(filehandler)
     logger_.addHandler(richhandler)
@@ -604,7 +602,7 @@ def main(user_query: str,
     for q in optimized_queries:
         abstracts = get_abstracts(q,
                                   n_res=10,
-                                  email='2601074@gmail.com',
+                                  email='fiyefiyefiye@gmail.com',
                                   pmid_list=pmid_list,
                                   reviews=reviews)
         if not abstracts:
