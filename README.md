@@ -3,7 +3,7 @@
 Automatically search for information in PubMed, obtain articles and/or abstracts and generate summary with links to information sources from them using GPT-3.5.
 
 ## Pipeline
-1. User inputs their query (optional: and list of PMIDs using `--pmid_list` flag, in that case the searching part is skipped, and program will analyze articles specified regarding the query)
+1. User inputs their query (optional: and list of PMIDs using `--pmid_list` flag, in that case the searching part is skipped, and program will analyze articles specified, regarding the query)
 2. GPT-3.5 processes it to make up to 3 optimized queries for PubMed
 3. The program passes this optimal queries to PubMed search and returns abstracts of top 10 results
 4. GPT-3.5 "reads" these abstracts, picks only relevant ones and returns their PMIDs
