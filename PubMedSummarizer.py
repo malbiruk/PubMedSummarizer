@@ -65,7 +65,7 @@ progress_bar = Progress(
 
 GPT_MODEL = 'gpt-3.5-turbo-0125'
 CLIENT = OpenAI(api_key=OPENAI_API_KEY)
-EMBEDDER = SentenceTransformer('dmis-lab/biobert-base-cased-v1.1')
+EMBEDDER = SentenceTransformer('dmis-lab/biobert-base-cased-v1.2')
 # embedder_mpnet = SentenceTransformer('all-mpnet-base-v2')
 CURRENT_DATE = datetime.now().strftime('%B %-d, %Y')
 
@@ -558,7 +558,8 @@ def tokens_to_prices(tokens: dict) -> dict:
 
 def gpt_continue_chat(messages: list,
                       model=GPT_MODEL,
-                      temperature=.7) -> list:
+                      temperature=.7,
+                      show_money: bool = False) -> list:
     '''
     just support the dialogue using input() from user
     '''
@@ -575,17 +576,20 @@ def gpt_continue_chat(messages: list,
             messages.append({'role': 'assistant', 'content': answer})
     except KeyboardInterrupt:
         console.print('\nExiting...\n', style='yellow')
-        console.print(f'Tokens used: {TOKENS_USED}', style='yellow')
-        prices = tokens_to_prices(TOKENS_USED)
-        if prices:
-            console.print(f'$ spent: {prices}',
-                          style='yellow')
+
+        if show_money:
+            console.print(f'Tokens used: {TOKENS_USED}', style='yellow')
+            prices = tokens_to_prices(TOKENS_USED)
+            if prices:
+                console.print(f'$ spent: {prices}',
+                              style='yellow')
         return messages
 
 
 def main(user_query: str,
          pmid_list: list = None,
          reviews: bool = False,
+         show_money: bool = False,
          n_articles: int = 10,
          n_chunks: int = 5,
          chunk_size: int = 6,
@@ -649,7 +653,7 @@ def main(user_query: str,
     console.print()
     console.print(f'[bold green]GPT:[/] {gpt_summary}')
     console.print()
-    messages = gpt_continue_chat(messages)
+    messages = gpt_continue_chat(messages, show_money)
     with open('gpt_messages.txt', 'a', encoding='utf-8') as f:
         f.write(messages_to_human_readable(messages))
 
@@ -665,6 +669,8 @@ if __name__ == '__main__':
                         help="List of PMIDs")
     parser.add_argument('-r', '--reviews', action='store_true',
                         help='find only review articles')
+    parser.add_argument('-m', '--show_money', action='store_true',
+                        help='show tokens and $ usage')
     parser.add_argument(
         '-a', '--n_articles', type=int, default=10,
         help='retrieve top {n} articles from PubMed per query (default=10)')
@@ -676,7 +682,7 @@ if __name__ == '__main__':
                         help='context chunk - {n} sentences (default=6)')
     parser.add_argument(
         '-o', '--overlap', type=int, default=2,
-        help='overlap between chunks (should be 20-30% of chunk size) '
+        help='overlap between chunks (should be 20-30%% of chunk size) '
         '(default=2)')
     parser.add_argument(
         '-e', '--email', type=str, default='fiyefiyefiye@gmail.com',
