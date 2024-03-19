@@ -12,6 +12,9 @@ Automatically search for information in PubMed, obtain articles and/or abstracts
 7. GPT-3.5 gets all these article chunks, cosine similarity scores, and abstracts along with their PMIDs and in response generates brief summary with relevant information (obtained only from these abstracts and articles), answering to the initial query (point 1) and provides corresponding PMIDs for each piece of information it writes in the answer.
 8. After that GPT works just as a chat-bot with all these context
 
+## Usage
+Via web-interface (use optional_requirements.txt file for this): `./run.sh`, also you can specify port like this `./run.sh 8501` (default) or via command line `python PubMedSummarizer.py "search query"`.
+
 ## Examples
 ### AI applications in medicine
 #### Input

@@ -20,6 +20,7 @@ import nltk
 import textract
 import torch
 from Bio import Entrez, Medline
+from config import EMBEDDING_MODEL, GPT_MODEL, PROMPT, TEMPERATURE
 from my_api_keys import OPENAI_API_KEY
 from openai import OpenAI
 from rich.console import Console
@@ -63,125 +64,10 @@ progress_bar = Progress(
     TimeRemainingColumn(),
 )
 
-GPT_MODEL = 'gpt-3.5-turbo-0125'
+
 CLIENT = OpenAI(api_key=OPENAI_API_KEY)
-EMBEDDER = SentenceTransformer('dmis-lab/biobert-base-cased-v1.2')
+EMBEDDER = SentenceTransformer(EMBEDDING_MODEL)
 # embedder_mpnet = SentenceTransformer('all-mpnet-base-v2')
-CURRENT_DATE = datetime.now().strftime('%B %-d, %Y')
-
-PROMPT = f"""
-You are a part of the program which gets a search query or question as an \
-input, performs optimized search for scientific articles in PubMed, \
-retrieves abstracts and/or full texts of relevant articles from the search \
-results and returns a brief precise comprehensive answer to the \
-initial query/question with the links to sources -- PMIDs of articles, \
-where each part of information was taken from.
-
-Each time you will be called, you should perform one of the following actions \
-(the action will be specified in the beginning of the prompt):
-CREATE_QUERY
-IDENTIFY_RELEVANT
-WRITE_SUMMARY
-CONTINUE_CHAT
-
-Now I will describe each action.
-
-CREATE_QUERY
-If a message starts with CREATE_QUERY, user input will follow it. Your task \
-will be to convert this input (could be a question, query or keywords) to \
-up to 3 optimized queries for PubMed. You can specify publication type \
-[PT] (for example, review, systematic review, clicnical trial) or you can specify \
-publication date range, if the search will benefit from it or if the user asks so. \
-Notice that current date is {CURRENT_DATE} for searches \
-like "last n years".
-Answer with up to 3 optimized queries separated by newlines.
-
-Example 1:
-input: "CREATE_QUERY
-Find me Paroxetine clinical trials of the last 10 years"
-your answer: "Paroxetine" AND "Clinical Trial"[PT] AND \
-("2012/01/01"[PDat] : "2022/12/31"[PDat])
-
-Example 2:
-input: "CREATE_QUERY
-why dinosaurs extinct"
-your answer: "Why did dinosarus become extinct
-Dinosaur extinction causes
-"
-
-IDENTIFY_RELEVANT
-If a message starts with IDENTIFY_RELEVANT, one of the queries you created \
-previously will follow it, then the next structure will be passed to you: \
-PMID, line break, abstract of the article with this PMID, two line breaks, \
-next PMID with abstract and so on.
-Your task will be to identify relevant articles to the provided \
-query by the abstracts. YOUR ANSWER WILL CONTAIN ONLY PMIDs SEPARATED BY SPACES. \
-No other text, just:
-PMID1 PMID2 PMID3
-
-Example:
-input: "IDENTIFY_RELEVANT
-Query: Why did dinosarus become extinct
-
-PMID: 30911383
-Abstract: Palaeontological deductions from the fossil remnants of extinct dinosaurs tell us much about their classification into species as well as about their physiological and behavioural characteristics. Geological evidence indicates that dinosaurs became extinct at the boundary between the Cretaceous and Paleogene eras, about 66 million years ago, at a time when there was worldwide environmental change resulting from the impact of a large celestial object with the Earth and/or from vast volcanic eruptions. However, apart from the presumption that climate change and interference with food supply contributed to their extinction, no biological mechanism has been suggested to explain why such a diverse range of terrestrial vertebrates ceased to exist. One of perhaps several contributing mechanisms comes by extrapolating from the physiology of the avian descendants of dinosaurs. This raises the possibility that cholecalciferol (vitamin D3) deficiency of developing embryos in dinosaur eggs could have caused their death before hatching, thus extinguishing the entire family of dinosaurs through failure to reproduce.
-
-PMID: 30816905
-Abstract: Evolution is both a fact and a theory. Evolution is widely observable in laboratory and natural populations as they change over time. The fact that we need annual flu vaccines is one example of observable evolution. At the same time, evolutionary theory explains more than observations, as the succession on the fossil record. Hence, evolution is also the scientific theory that embodies biology, including all organisms and their characteristics. In this paper, we emphasize why evolution is the most important theory in biology. Evolution explains every biological detail, similar to how history explains many aspects of a current political situation. Only evolution explains the patterns observed in the fossil record. Examples include the succession in the fossil record; we cannot find the easily fossilized mammals before 300 million years ago; after the extinction of the dinosaurs, the fossil record indicates that mammals and birds radiated throughout the planet. Additionally, the fact that we are able to construct fairly consistent phylogenetic trees using distinct genetic markers in the genome is only explained by evolutionary theory. Finally, we show that the processes that drive evolution, both on short and long time scales, are observable facts.
-
-PMID: 34188028
-Abstract: The question why non-avian dinosaurs went extinct 66 million years ago (Ma) remains unresolved because of the coarseness of the fossil record. A sudden extinction caused by an asteroid is the most accepted hypothesis but it is debated whether dinosaurs were in decline or not before the impact. We analyse the speciation-extinction dynamics for six key dinosaur families, and find a decline across dinosaurs, where diversification shifted to a declining-diversity pattern ~76 Ma. We investigate the influence of ecological and physical factors, and find that the decline of dinosaurs was likely driven by global climate cooling and herbivorous diversity drop. The latter is likely due to hadrosaurs outcompeting other herbivores. We also estimate that extinction risk is related to species age during the decline, suggesting a lack of evolutionary novelty or adaptation to changing environments. These results support an environmentally driven decline of non-avian dinosaurs well before the asteroid impact."
-
-Your answer: "30911383 34188028"
-
-WRITE_SUMMARY
-If a message starts with WRITE_SUMMARY, you will be provided with the initial \
-user query, optimized queries, PMIDs, and context chunks or abstracts \
-from corresponding articles and cosine similarity scores of that context \
-chunks to the queries you generated in one of the previous steps.
-The input message will have the following structure:
-WRITE_SUMMARY
-User query: input query
-
-Optimized query: optimized query 1
-
-PMID: PMID
-Context Chunks:
-context chunk 1
-context chunk 2
-...
-Cosine Similarity Scores: [score for chunk 1, score for chunk 2, ...]
-
-PMID: PMID
-Abstract:
-Abstract
-
-PMID: PMID
-...
-
-Optimized query: optimized query 2
-
-PMID: PMID
-Context Chunks:
-context chunk 1
-context chunk 2
-...
-Cosine Similarity Scores: [score for chunk 1, score for chunk 2, ...]
-
-...
-
-Your task will be to briefluy and precisely summarize the information \
-provided in these contet chunks and abstracts and answer to the intial user query \
-like a scientist writing literature review. You also should provide sources \
-i.e. PMIDs of the articles from which you took particluar pieces of information \
-for your summary/answer. YOUR SUMMARY SHOULD BE ABOUT 250-300 WORDS. \
-USE ONLY INFORMATION PROVIDED IN THE INPUT.
-Example of your final answer format:
-Although non-avian dinosaurs dominated terrestrial ecosystems until the end-Cretaceous, both a marked increase of extinction and a decrease in their ability to replace extinct species led dinosaurs to decline well before the K/Pg extinction (PMID: 34188028). Even though the latest Cretaceous dinosaur fossil record is geographically dominated by Laurasian taxa, the diversity patterns observed here are based on continent-scale samples that reflect a substantial part of latest Cretaceous dinosaur global diversity. Long-term environmental changes led to restructuring of terrestrial ecosystems that made dinosaurs particularly prone to extinction (PMID: 23112149). These results are also consistent with modelling studies of ecological food-webs (PMID: 22549833) and suggest that loss of key herbivorous dinosaurs would have made terminal Maastrichtian ecosystems—in contrast with ecosystems from earlier in the Late Cretaceous (Campanian)—more susceptible to cascading extinctions by an external forcing mechanism. We propose that a combination of global climate cooling, the diversity of herbivores, and age-dependent extinction had a negative impact on dinosaur extinction in the Late Cretaceous; these factors impeded their recovery from the final catastrophic event (PMID: 34188028).
-
-CONTINUE_CHAT
-If a message starts with CONTINUE_CHAT, than just support the dialogue using context you already have.
-""".strip()
 
 
 def initialize_logging(level=logging.INFO, folder: str = '.') -> None:
@@ -238,13 +124,25 @@ def get_abstracts(query: str,
                   n_res: int = 10,
                   email: str = 'fiyefiyefiye@gmail.com',
                   pmid_list: list = None,
-                  reviews: bool = False
+                  reviews: bool = False,
+                  pub_types: list = None,
+                  from_year: int = None,
                   ) -> dict:
     '''
     get abstracts by search query
     returns dict PMID: abstract
     '''
     query = query + ' AND "review"[PT]' if reviews else query
+    if pub_types:
+        query = (query
+                 + ' AND ('
+                 + ' OR '.join(f'"{i}"[PT]' for i in pub_types)
+                 + ')')
+    if from_year:
+        current_date = datetime.now().strftime('%Y/%m/%d')
+        query = (query
+                 + f' AND ("{from_year}/01/01"[PDat] : "{current_date}"[PDat])')
+
     if pmid_list is None:
         logger.info('getting abstracts for query "%s"...', query)
         results = search(query, n_res, email)
@@ -364,15 +262,18 @@ def get_context_from_articles(query: str,
     pmid_to_embeddings = {}
 
     for pmid, v in pmid_to_article.items():
-        if os.path.exists(f'cache/{pmid}.pt'):
+        emb_file_name = (
+            f'cache/{pmid}-{EMBEDDING_MODEL.rsplit("/", maxsplit=1)[-1]}'
+            f'-{chunk_size}-{overlap}.pt')
+        if os.path.exists(emb_file_name):
             logger.info('%s already embedded', pmid)
-            pmid_to_embeddings[pmid] = torch.load(f'cache/{pmid}.pt')
+            pmid_to_embeddings[pmid] = torch.load(emb_file_name)
         else:
             if v is not None:
                 pmid_to_embeddings[pmid] = embedder.encode(
                     chunk_text(v, chunk_size, overlap),
                     convert_to_tensor=True)
-                torch.save(pmid_to_embeddings[pmid], f'cache/{pmid}.pt')
+                torch.save(pmid_to_embeddings[pmid], emb_file_name)
             else:
                 pmid_to_embeddings[pmid] = v
 
@@ -407,7 +308,8 @@ def get_context_from_articles(query: str,
 
 def chat_completion_request(messages,
                             model=GPT_MODEL,
-                            temperature=.7):
+                            temperature=TEMPERATURE,
+                            stream=False):
     '''
     gpt request function
     '''
@@ -415,8 +317,16 @@ def chat_completion_request(messages,
         completion = CLIENT.chat.completions.create(
             model=model,
             messages=messages,
-            temperature=temperature
+            temperature=temperature,
+            stream=stream
         )
+        if stream:
+            def iter_func():
+                for chunk in completion:
+                    if chunk.choices[0].delta.content:
+                        yield chunk.choices[0].delta.content
+            return iter_func()
+
         for key, value in dict(completion.usage).items():
             if key in TOKENS_USED:
                 TOKENS_USED[key] += value
@@ -430,7 +340,7 @@ def chat_completion_request(messages,
 def gpt_process_query(messages: list,
                       user_query: str,
                       model=GPT_MODEL,
-                      temperature=.7) -> List[dict]:
+                      temperature=TEMPERATURE) -> List[dict]:
     '''
     optimize user query to multiple searches
     '''
@@ -447,7 +357,7 @@ def gpt_identify_relevant(messages: list,
                           query: str,
                           pmid_to_abstract: dict,
                           model=GPT_MODEL,
-                          temperature=.7) -> list:
+                          temperature=TEMPERATURE) -> list:
     '''
     identify relevant articles to the query by abstracts
     '''
@@ -467,7 +377,8 @@ def gpt_generate_summary(messages: list,
                          user_query: str,
                          query_to_context: dict,
                          model=GPT_MODEL,
-                         temperature=.7) -> tuple:
+                         temperature=TEMPERATURE,
+                         prompt=PROMPT) -> tuple:
     '''
     summarize info from contexts and different queries
     '''
@@ -486,7 +397,9 @@ def gpt_generate_summary(messages: list,
                 prompt += f'Abstract:\n{cont}\n\n'
 
     # available context space
-    av_cont_space = int(16300 * 4 - (len(PROMPT) + 300) / 4)
+    max_tokens = 16385 if GPT_MODEL.startswith('gpt-3.5') else 128000
+
+    av_cont_space = int(16300 * 4 - (len(prompt) + 300) / 4)
     if len(prompt) > av_cont_space:
         prompt = prompt[:av_cont_space]
         logger.warning('Truncated prompt in order to fit in context window.')
@@ -558,7 +471,7 @@ def tokens_to_prices(tokens: dict) -> dict:
 
 def gpt_continue_chat(messages: list,
                       model=GPT_MODEL,
-                      temperature=.7,
+                      temperature=TEMPERATURE,
                       show_money: bool = False) -> list:
     '''
     just support the dialogue using input() from user
@@ -601,8 +514,10 @@ def main(user_query: str,
     '''
     if not os.path.exists('cache'):
         os.makedirs('cache')
-
-    messages = [{'role': 'system', 'content': PROMPT}]
+    current_date = datetime.now().strftime('%Y/%m/%d')
+    prompt = PROMPT.replace('{N_QUERIES}', '3').replace(
+        '{CURRENT_DATE}', current_date)
+    messages = [{'role': 'system', 'content': prompt}]
     optimized_queries = gpt_process_query(messages, user_query)
     query_to_context = {}
 
@@ -645,7 +560,8 @@ def main(user_query: str,
 
     gpt_summary, messages = gpt_generate_summary(messages,
                                                  user_query,
-                                                 query_to_context)
+                                                 query_to_context,
+                                                 prompt=prompt)
 
     with open('gpt_summary.txt', 'w', encoding='utf-8') as f:
         f.write(gpt_summary)
