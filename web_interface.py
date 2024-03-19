@@ -90,6 +90,11 @@ def main():
             temperature = st.slider('Temperature', 0., 1., .2, .1)
         else:
             temperature = .2
+
+        prompt = config.PROMPT
+        if st.toggle('Edit system prompt'):
+            prompt = st.text_area('System prompt', prompt)
+
         embedder_name = st.selectbox('Embedding model',
                                      ['dmis-lab/biobert-base-cased-v1.2',
                                       'msmarco-distilbert-base-v4'])
@@ -138,10 +143,10 @@ def main():
             if not os.path.exists('cache'):
                 os.makedirs('cache')
             current_date = datetime.now().strftime('%Y/%m/%d')
-            prompt = config.PROMPT.replace(
+            updated_prompt = prompt.replace(
                 '{N_QUERIES}', str(n_queries)).replace(
                 '{CURRENT_DATE}', current_date)
-            messages = [{'role': 'system', 'content': prompt}]
+            messages = [{'role': 'system', 'content': updated_prompt}]
             optimized_queries = gpt_process_query(messages, user_query,
                                                   model=model_name,
                                                   temperature=temperature)
@@ -211,7 +216,7 @@ def main():
                                                          query_to_context,
                                                          model_name,
                                                          temperature,
-                                                         prompt)
+                                                         updated_prompt)
 
             status.update(label='Done!', state='complete', expanded=False)
             st.write('Done!')
