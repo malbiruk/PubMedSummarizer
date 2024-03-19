@@ -51,13 +51,19 @@ def main():
         pub_types = None
         pmid_list = None
         email = 'fiyefiyefiye@gmail.com'
+        use_full_article_texts = st.toggle(
+            'Use full articles\' texts',
+            help='This implies downloading and embedding articles on-the-fly. '
+            'It may provide more acccurate results and context, but '
+            'keep in mind that it may take about 10 minutes per run.',
+        )
         use_pmids_list = st.toggle('Use provided list of PMIDs')
         if not use_pmids_list:
             n_queries = st.slider('Generate ___n___ optimized queries '
                                   'from input query',
                                   1, 10, 3)
             n_articles = st.slider('Retrieve top ___n___ articles per query',
-                                   5, 25, 10)
+                                   1, 25, 10)
             filter_by_year = st.toggle('Filter by publication date')
             if filter_by_year:
                 from_year = st.slider(
@@ -87,14 +93,14 @@ def main():
         embedder_name = st.selectbox('Embedding model',
                                      ['dmis-lab/biobert-base-cased-v1.2',
                                       'msmarco-distilbert-base-v4'])
-
-        st.header('Chunking')
-        n_chunks = st.slider('Retrieve top ___n___ chunks per article',
-                             1, 20, 5)
-        chunk_size = st.slider('Chunk size, sentences',
-                               1, 20, 6)
-        overlap = st.slider('Chunks overlap, %', 0, 50, 30, 5)
-        overlap = round(overlap / 100 * chunk_size)
+        if use_full_article_texts:
+            st.header('Chunking')
+            n_chunks = st.slider('Retrieve top ___n___ chunks per article',
+                                 1, 20, 5)
+            chunk_size = st.slider('Chunk size, sentences',
+                                   1, 20, 6)
+            overlap = st.slider('Chunks overlap, %', 0, 50, 30, 5)
+            overlap = round(overlap / 100 * chunk_size)
 
     if 'clicked' not in st.session_state:
         st.session_state.clicked = False
@@ -106,6 +112,8 @@ def main():
         st.session_state.messages_with_context = []
     if 'script_messages' not in st.session_state:
         st.session_state.script_messages = []
+    if 'prev_query' not in st.session_state:
+        st.session_state.prev_query = ''
 
     st.write("")
     col1, col2 = st.columns([10, 1])
@@ -119,12 +127,11 @@ def main():
         st.button('Run', on_click=click_button, type='primary')
 
     # st.write('This is sample text. ' * 20)
-    prev_query = ""
-    if prev_query != user_query:
+    if st.session_state.prev_query != user_query:
         st.session_state.clicked = True
 
     if st.session_state.clicked:
-        prev_query = user_query
+        st.session_state.prev_query = user_query
         with st.status('Optimizing query...') as status:
             st.write('Optimizing query...')
             embedder = SentenceTransformer(embedder_name)
@@ -169,25 +176,32 @@ def main():
                 if not relevant_pmids:
                     continue
 
-                status.update(label='Downloading articles\' texts...')
-                st.write('Downloading articles\' texts...')
-                articles = get_article_texts(relevant_pmids)
+                if use_full_article_texts:
+                    status.update(label='Downloading articles\' texts...')
+                    st.write('Downloading articles\' texts...')
+                    articles = get_article_texts(relevant_pmids)
 
-                status.update(
-                    label='Embedding articles\' texts and '
-                    'performing semantic search...')
-                st.write('Embedding articles\' texts and '
-                         'performing semantic search...')
-                context_chunks, cosine_similarity_scores = (
-                    get_context_from_articles(query,
-                                              embedder,
-                                              articles,
-                                              n_res=n_chunks,
-                                              chunk_size=chunk_size,
-                                              overlap=overlap))
-                contexts = {k: abstracts[k] if v is None else v
-                            for k, v in context_chunks.items()}
-                query_to_context[query] = (contexts, cosine_similarity_scores)
+                    status.update(
+                        label='Embedding articles\' texts and '
+                        'performing semantic search...')
+                    st.write('Embedding articles\' texts and '
+                             'performing semantic search...')
+                    context_chunks, cosine_similarity_scores = (
+                        get_context_from_articles(query,
+                                                  embedder,
+                                                  articles,
+                                                  n_res=n_chunks,
+                                                  chunk_size=chunk_size,
+                                                  overlap=overlap))
+                    contexts = {k: abstracts[k] if v is None else v
+                                for k, v in context_chunks.items()}
+                    query_to_context[query] = (contexts,
+                                               cosine_similarity_scores)
+                else:
+                    query_to_context[query] = (
+                        {k: abstracts[k] for k in relevant_pmids},
+                        None
+                    )
 
             status.update(label='Generating summary using provided context...')
             st.write('Generating summary using provided context...')
@@ -199,9 +213,7 @@ def main():
                                                          temperature,
                                                          prompt)
 
-            with open('gpt_summary.txt', 'w', encoding='utf-8') as f:
-                f.write(gpt_summary)
-            status.update(label='Done!')
+            status.update(label='Done!', state='complete', expanded=False)
             st.write('Done!')
 
         st.session_state.gpt_summary = convert_pmids_to_links(gpt_summary)
@@ -240,6 +252,16 @@ def main():
                     {"role": "assistant", "content": complete_response})
                 st.session_state.messages_with_context.append(
                     {"role": "assistant", "content": complete_response})
+
+        if None in [i['content'] for i in (st.session_state.script_messages
+                                           + st.session_state.messages_with_context[1:])]:
+            st.warning(
+                '__Something went wrong, got some empty responses.__\n\n'
+                'Try to reduce one of the following: '
+                'n optimized queries, n articles per query, '
+                'n chunks per article, chunk size, '
+                'or choose a model with bigger '
+                'context window or modify your query and try again.')
 
         text_contents = messages_to_human_readable(
             st.session_state.script_messages

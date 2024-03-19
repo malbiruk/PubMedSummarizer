@@ -383,29 +383,29 @@ def gpt_generate_summary(messages: list,
     summarize info from contexts and different queries
     '''
     logger.info('summarizing info: "%s"...', user_query)
-    prompt = f'WRITE_SUMMARY\nUser query: {user_query}\n\n'
+    user_prompt = f'WRITE_SUMMARY\nUser query: {user_query}\n\n'
 
     for k, v in query_to_context.items():
-        prompt += f'Optimized query: {k}\n\n'
+        user_prompt += f'Optimized query: {k}\n\n'
         for pmid, cont in v[0].items():
-            prompt += f'PMID: {pmid}\n'
+            user_prompt += f'PMID: {pmid}\n'
             if isinstance(cont, list):
-                prompt += 'Context Chunks:\n'
-                prompt += '\n'.join(cont)
-                prompt += f'\nCosine Similarity Scores: {v[1][pmid]}\n\n'
+                user_prompt += 'Context Chunks:\n'
+                user_prompt += '\n'.join(cont)
+                user_prompt += f'\nCosine Similarity Scores: {v[1][pmid]}\n\n'
             else:
-                prompt += f'Abstract:\n{cont}\n\n'
+                user_prompt += f'Abstract:\n{cont}\n\n'
 
     # available context space
     max_tokens = 16385 if GPT_MODEL.startswith('gpt-3.5') else 128000
 
-    av_cont_space = int(16300 * 4 - (len(prompt) + 300) / 4)
-    if len(prompt) > av_cont_space:
-        prompt = prompt[:av_cont_space]
+    av_cont_space = int((max_tokens) * 4 - (len(user_prompt)) / 4)
+    if len(user_prompt) > av_cont_space:
+        user_prompt = user_prompt[:av_cont_space]
         logger.warning('Truncated prompt in order to fit in context window.')
 
     messages = [messages[0]]
-    messages.append({'role': 'user', 'content': prompt})
+    messages.append({'role': 'user', 'content': user_prompt})
     answer = chat_completion_request(messages, model, temperature)
     messages.append({'role': 'assistant', 'content': answer})
     # logger.info('got summary: "%s"', answer)
@@ -446,7 +446,7 @@ def messages_to_human_readable(messages: list) -> str:
     get only content of messages without system prompt and with nice separators
     '''
     return '\n\n----------\n\n'.join(
-        [i['content'].strip() for i in messages[1:]])
+        [str(i['content']).strip() for i in messages[1:]])
 
 
 def tokens_to_prices(tokens: dict) -> dict:
