@@ -53,15 +53,25 @@ def main():
         email = 'fiyefiyefiye@gmail.com'
         use_full_article_texts = st.toggle(
             'Use full articles\' texts',
-            help='This implies downloading and embedding articles on-the-fly. '
+            help='By default only articles\' abstracts are used. '
+            'This option implies downloading and embedding articles on-the-fly '
+            'followed by semantic search. '
             'It may provide more acccurate results and context, but '
-            'keep in mind that it may take about 10 minutes per run.',
+            'keep in mind that it may take about 10 minutes per run '
+            '(depends on n queries and n articles). For limited list of '
+            'articles it may be quite useful.',
         )
-        use_pmids_list = st.toggle('Use provided list of PMIDs')
+        use_pmids_list = st.toggle('Provide list of PMIDs')
+        if use_pmids_list:
+            pmid_list = st.text_input(
+                'List of PMIDs (separated by spaces)').split()
+            n_articles = None
+
+        n_queries = st.slider('Generate ___n___ optimized queries '
+                              'from input query',
+                              1, 10, 3)
+
         if not use_pmids_list:
-            n_queries = st.slider('Generate ___n___ optimized queries '
-                                  'from input query',
-                                  1, 10, 3)
             n_articles = st.slider('Retrieve top ___n___ articles per query',
                                    1, 25, 10)
             filter_by_year = st.toggle('Filter by publication date')
@@ -79,8 +89,7 @@ def main():
                 for pub_type in all_pub_types:
                     if st.checkbox(pub_type):
                         pub_types.append(pub_type)
-        else:
-            pmid_list = st.text_input('List of PMIDs (separated by spaces)')
+
         # email = st.text_input('Email for Entrez', 'fiyefiyefiye@gmail.com')
 
         st.header('Models')
@@ -95,11 +104,21 @@ def main():
         if st.toggle('Edit system prompt'):
             prompt = st.text_area('System prompt', prompt)
 
-        embedder_name = st.selectbox('Embedding model',
-                                     ['dmis-lab/biobert-base-cased-v1.2',
-                                      'msmarco-distilbert-base-v4'])
         if use_full_article_texts:
-            st.header('Chunking')
+            embedder_name = st.selectbox(
+                'Embedding model',
+                ['dmis-lab/biobert-base-cased-v1.2',
+                 'msmarco-distilbert-base-v4'])
+
+            st.header(
+                'Chunking',
+                help='When full articles\' texts are used, '
+                'they are split into chunks consisting '
+                'of several sentences. After that, these chunks are '
+                'embedded, cosine similarity search '
+                'by input query is performed, '
+                'and the model gets top n chunks as a context '
+                'from each article.')
             n_chunks = st.slider('Retrieve top ___n___ chunks per article',
                                  1, 20, 5)
             chunk_size = st.slider('Chunk size, sentences',
@@ -131,7 +150,6 @@ def main():
     with col2:
         st.button('Run', on_click=click_button, type='primary')
 
-    # st.write('This is sample text. ' * 20)
     if st.session_state.prev_query != user_query:
         st.session_state.clicked = True
 
@@ -139,7 +157,8 @@ def main():
         st.session_state.prev_query = user_query
         with st.status('Optimizing query...') as status:
             st.write('Optimizing query...')
-            embedder = SentenceTransformer(embedder_name)
+            if use_full_article_texts:
+                embedder = SentenceTransformer(embedder_name)
             if not os.path.exists('cache'):
                 os.makedirs('cache')
             current_date = datetime.now().strftime('%Y/%m/%d')
@@ -153,10 +172,14 @@ def main():
             query_to_context = {}
             if pmid_list is not None:
                 pmid_list = [str(i) for i in pmid_list]
+                status.update(label='Downloading abstracts...')
+                st.write('Downloading abstracts...')
 
             for q in optimized_queries:
-                status.update(label=f'Searching articles by query {q}...')
-                st.write(f'Searching articles by query {q}...')
+                if pmid_list is None:
+                    status.update(label=f'Searching articles by query {q}...')
+                    st.write(f'Searching articles by query {q}...')
+
                 abstracts = get_abstracts(q,
                                           n_res=n_articles,
                                           email=email,
@@ -169,8 +192,13 @@ def main():
 
                 q = q.replace('"', '')
                 query = extract_terms(q)
-                status.update(label='Getting relevant PMIDs...')
-                st.write('Getting relevant PMIDs...')
+                if pmid_list:
+                    status.update(label=f'Applying query {query}...')
+                    st.write(f'Applying query {query}...')
+
+                if pmid_list is None:
+                    status.update(label='Getting relevant PMIDs...')
+                    st.write('Getting relevant PMIDs...')
                 relevant_pmids = (gpt_identify_relevant(messages,
                                                         query,
                                                         abstracts,
