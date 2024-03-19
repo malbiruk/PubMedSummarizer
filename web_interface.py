@@ -119,15 +119,20 @@ def main():
         st.button('Run', on_click=click_button, type='primary')
 
     # st.write('This is sample text. ' * 20)
+    prev_query = ""
+    if prev_query != user_query:
+        st.session_state.clicked = True
 
     if st.session_state.clicked:
+        prev_query = user_query
         with st.status('Optimizing query...') as status:
             st.write('Optimizing query...')
             embedder = SentenceTransformer(embedder_name)
             if not os.path.exists('cache'):
                 os.makedirs('cache')
             current_date = datetime.now().strftime('%Y/%m/%d')
-            prompt = config.PROMPT.replace('{N_QUERIES}', str(n_queries)).replace(
+            prompt = config.PROMPT.replace(
+                '{N_QUERIES}', str(n_queries)).replace(
                 '{CURRENT_DATE}', current_date)
             messages = [{'role': 'system', 'content': prompt}]
             optimized_queries = gpt_process_query(messages, user_query,
