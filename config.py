@@ -106,9 +106,10 @@ Cosine Similarity Scores: [score for chunk 1, score for chunk 2, ...]
 
 ...
 
-Your task will be to briefly and precisely summarize the information \
-provided in these contet chunks and abstracts and answer to the intial user query \
-like a scientist writing literature review. You also should provide sources \
+Your task will be to answer to the intial user query \
+like a scientist writing literature review. \
+You should use the information \
+provided in these context chunks and abstracts. You also should provide sources \
 i.e. PMIDs of the articles from which you took particluar pieces of information \
 for your summary/answer. YOUR SUMMARY SHOULD BE ABOUT 250-300 WORDS. \
 USE ONLY INFORMATION PROVIDED IN THE INPUT.

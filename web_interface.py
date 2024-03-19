@@ -31,7 +31,7 @@ def click_button():
 
 
 def convert_pmids_to_links(text: str) -> str:
-    pattern = r'(?<!\[)(?<!\d)(\d{8})(?!\d)(?!\])'
+    pattern = r'(?<!\[)(?<!\d)(\d{7,8})(?!\d)(?!\])'
     replacement = r'[\1](https://pubmed.ncbi.nlm.nih.gov/\1/)'
     result = re.sub(pattern, replacement, text)
     return result
@@ -86,10 +86,10 @@ def main():
         st.header('Models')
         model_name = st.selectbox('GPT model',
                                   ['gpt-3.5-turbo-0125', 'gpt-4-0125-preview'])
-        if st.toggle('Modify temperature (defaul=0.7)'):
-            temperature = st.slider('Temperature', 0., 1., .7, .1)
+        if st.toggle('Modify temperature (defaul=0.2)'):
+            temperature = st.slider('Temperature', 0., 1., .2, .1)
         else:
-            temperature = .7
+            temperature = .2
         embedder_name = st.selectbox('Embedding model',
                                      ['dmis-lab/biobert-base-cased-v1.2',
                                       'msmarco-distilbert-base-v4'])
@@ -253,8 +253,9 @@ def main():
                 st.session_state.messages_with_context.append(
                     {"role": "assistant", "content": complete_response})
 
-        if None in [i['content'] for i in (st.session_state.script_messages
-                                           + st.session_state.messages_with_context[1:])]:
+        if None in [i['content'] for i in (
+                st.session_state.script_messages
+                + st.session_state.messages_with_context[1:])]:
             st.warning(
                 '__Something went wrong, got some empty responses.__\n\n'
                 'Try to reduce one of the following: '
