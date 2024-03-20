@@ -1,0 +1,21 @@
+{
+  "logger": {
+    "title": "Remote Sync"
+  },
+  "uploadOnSave": false,
+  "useAtomicWrites": false,
+  "deleteLocal": true,
+  "hostname": "legolas.lan",
+  "target": "/home/k.kostyuk/PubMedSummarizer",
+  "ignore": [
+    ".remote-sync.json",
+    ".git/**",
+    "**/__pycache__/**",
+    "cache/**",
+    ".env"
+  ],
+  "username": "k.kostyuk",
+  "password": "7bt8U%$^YGr9BZ",
+  "watch": [],
+  "transport": "scp"
+}

@@ -15,6 +15,7 @@ from datetime import datetime
 from typing import List
 from urllib.request import urlretrieve
 
+import httpx
 import metapub
 import nltk
 import textract
@@ -68,7 +69,11 @@ progress_bar = Progress(
 )
 
 
-CLIENT = OpenAI(api_key=OPENAI_API_KEY)
+proxy_url = os.environ.get('OPENAI_PROXY_URL')
+
+CLIENT = (OpenAI(api_key=OPENAI_API_KEY) if proxy_url is None or proxy_url == ""
+          else OpenAI(api_key=OPENAI_API_KEY,
+                      http_client=httpx.Client(proxy=proxy_url)))
 EMBEDDER = SentenceTransformer(EMBEDDING_MODEL)
 # embedder_mpnet = SentenceTransformer('all-mpnet-base-v2')
 

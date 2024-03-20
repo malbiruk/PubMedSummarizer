@@ -366,7 +366,7 @@ def main():
                        page_icon=':bookmark_tabs:')
     customize_page_appearance()
     st.title('PubMedSummarizer', anchor=False)
-
+    st.write(os.environ.get('OPENAI_PROXY_URL'))
     settings = configure_sidebar()
 
     initialize_session_state()
@@ -382,7 +382,7 @@ def main():
     with col2:
         st.button('Run', on_click=click_button, type='primary')
 
-    if st.session_state.prev_query != user_query:
+    if user_query and (st.session_state.prev_query != user_query):
         click_button()
 
     if st.session_state.clicked:
