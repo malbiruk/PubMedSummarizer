@@ -73,6 +73,8 @@ def configure_sidebar() -> Settings:
         n_chunks = None
         chunk_size = None
         overlap = None
+        filter_by_year = False
+        filter_by_pub_type = False
 
         use_full_article_texts = st.toggle(
             'Use full articles\' texts',
@@ -366,7 +368,6 @@ def main():
                        page_icon=':bookmark_tabs:')
     customize_page_appearance()
     st.title('PubMedSummarizer', anchor=False)
-    st.write(os.environ.get('OPENAI_PROXY_URL'))
     settings = configure_sidebar()
 
     initialize_session_state()
