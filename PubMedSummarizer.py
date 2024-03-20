@@ -21,7 +21,7 @@ import textract
 import torch
 from Bio import Entrez, Medline
 from config import EMBEDDING_MODEL, GPT_MODEL, PROMPT, TEMPERATURE
-from my_api_keys import OPENAI_API_KEY
+from dotenv import load_dotenv
 from openai import OpenAI
 from rich.console import Console
 from rich.logging import RichHandler
@@ -32,6 +32,8 @@ from rich_argparse import RichHelpFormatter
 from scidownl import scihub_download
 from sentence_transformers import SentenceTransformer, util
 
+load_dotenv()
+
 console = Console(soft_wrap=True)
 
 TOKENS_USED = {"completion_tokens": 0,
@@ -39,6 +41,7 @@ TOKENS_USED = {"completion_tokens": 0,
                "total_tokens": 0}
 
 # logging.root.handlers = []
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 
 class SpeedColumn(ProgressColumn):

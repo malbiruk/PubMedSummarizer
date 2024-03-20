@@ -71,6 +71,7 @@ Pygments==2.17.2
 pyproject-api==1.6.1
 PySocks==1.7.1
 pytest==8.0.2
+python_dotenv==1.0.1
 python-Levenshtein==0.25.0
 python-pptx==0.6.23
 pytz==2024.1

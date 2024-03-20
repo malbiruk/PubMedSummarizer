@@ -1,6 +1,6 @@
 cache/*
 __pycache__*
 gpt_*
-my_api_keys.py
+.env
 out.log
 default/
