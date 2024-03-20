@@ -94,7 +94,13 @@ def main():
 
         st.header('Models')
         model_name = st.selectbox('GPT model',
-                                  ['gpt-3.5-turbo-0125', 'gpt-4-0125-preview'])
+                                  ['gpt-3.5-turbo (16k)',
+                                   'gpt-4-32k (32k)'
+                                   'gpt-4 (8k)',
+                                   'gpt-4-turbo-preview (128k)',
+                                   ])
+
+        model_name = model_name.split(maxsplit=1)[0]
         if st.toggle('Modify temperature (defaul=0.2)'):
             temperature = st.slider('Temperature', 0., 1., .2, .1)
         else:
@@ -151,7 +157,7 @@ def main():
         st.button('Run', on_click=click_button, type='primary')
 
     if st.session_state.prev_query != user_query:
-        st.session_state.clicked = True
+        click_button()
 
     if st.session_state.clicked:
         st.session_state.prev_query = user_query
