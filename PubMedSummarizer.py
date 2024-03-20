@@ -381,7 +381,7 @@ def gpt_generate_summary(messages: list,
                          query_to_context: dict,
                          model=GPT_MODEL,
                          temperature=TEMPERATURE,
-                         prompt=PROMPT) -> tuple:
+                         ) -> tuple:
     '''
     summarize info from contexts and different queries
     '''

@@ -1,7 +1,6 @@
-EMBEDDING_MODEL = 'dmis-lab/biobert-base-cased-v1.2'
-GPT_MODEL = 'gpt-3.5-turbo-0125'
-TEMPERATURE = .7
-N_QUERIES = 3
+EMBEDDING_MODEL = 'dmis-lab/biobert-base-cased-v1.2' # used in cli version
+GPT_MODEL = 'gpt-3.5-turbo-0125' # used in cli version
+TEMPERATURE = .7 # used in cli version
 PROMPT = """
 You are a part of the program which gets a search query or question as an \
 input, performs optimized search for scientific articles in PubMed, \

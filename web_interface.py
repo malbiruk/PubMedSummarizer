@@ -243,8 +243,7 @@ def main():
                                                          user_query,
                                                          query_to_context,
                                                          model_name,
-                                                         temperature,
-                                                         updated_prompt)
+                                                         temperature)
 
             status.update(label='Done!', state='complete', expanded=False)
             st.write('Done!')
