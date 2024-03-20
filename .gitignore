@@ -4,3 +4,4 @@ gpt_*
 .env
 out.log
 default/
+.remote-sync.json
