@@ -82,7 +82,7 @@ def configure_sidebar() -> Settings:
             'This option implies downloading and embedding articles on-the-fly '
             'followed by semantic search. '
             'It may provide more acccurate results and context, but '
-            'keep in mind that it may take about 10 minutes per run '
+            'keep in mind that it may take more than 10 minutes per run '
             '(depends on n queries and n articles). For limited list of '
             'articles it may be quite useful.',
         )

@@ -74,8 +74,12 @@ proxy_url = os.environ.get('OPENAI_PROXY_URL')
 CLIENT = (OpenAI(api_key=OPENAI_API_KEY) if proxy_url is None or proxy_url == ""
           else OpenAI(api_key=OPENAI_API_KEY,
                       http_client=httpx.Client(proxy=proxy_url)))
-EMBEDDER = SentenceTransformer(EMBEDDING_MODEL)
 # embedder_mpnet = SentenceTransformer('all-mpnet-base-v2')
+
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
 
 
 def initialize_logging(level=logging.INFO, folder: str = '.') -> None:
@@ -528,6 +532,7 @@ def main(user_query: str,
     '''
     Search and summarize info from PubMed using GPT.
     '''
+    embedder = SentenceTransformer(EMBEDDING_MODEL)
     if not os.path.exists('cache'):
         os.makedirs('cache')
     current_date = datetime.now().strftime('%Y/%m/%d')
@@ -561,7 +566,7 @@ def main(user_query: str,
         articles = get_article_texts(relevant_pmids)
         context_chunks, cosine_similarity_scores = (
             get_context_from_articles(query,
-                                      EMBEDDER,
+                                      embedder,
                                       articles,
                                       n_res=n_chunks,
                                       chunk_size=chunk_size,
