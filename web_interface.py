@@ -15,7 +15,7 @@ from PubMedSummarizer import (chat_completion_request, extract_terms,
                               get_abstracts, get_article_texts,
                               get_context_from_articles, gpt_generate_summary,
                               gpt_identify_relevant, gpt_process_query,
-                              messages_to_human_readable)
+                              messages_to_human_readable, initialize_cache)
 from sentence_transformers import SentenceTransformer
 
 Settings = TypeVar('Settings')
@@ -223,8 +223,6 @@ def publications_search_and_analysis(session_state: st.session_state,
         st.write('Optimizing query...')
         if settings.use_full_article_texts:
             embedder = SentenceTransformer(settings.embedder_name)
-        if not os.path.exists('cache'):
-            os.makedirs('cache')
         current_date = datetime.now().strftime('%Y/%m/%d')
         updated_prompt = settings.prompt.replace(
             '{N_QUERIES}', str(settings.n_queries)).replace(
@@ -364,6 +362,7 @@ def main():
     represents main logic of program:
     runs functions from PubMedSummarizer along with creating the interface
     '''
+    initialize_cache()
     st.set_page_config(page_title='PubMedSummarizer',
                        page_icon=':bookmark_tabs:')
     customize_page_appearance()

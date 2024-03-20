@@ -208,11 +208,20 @@ def get_article_texts(id_list: List[str]) -> dict:
     retrieve full text of articles by PMIDs
     '''
     result = {}
+    with open('cache/pmids_without_full_texts.txt',
+              encoding='utf-8') as f:
+        pmids_without_texts = f.readlines()
     with progress_bar as p:
         for pmid in p.track(id_list,
                             description='downloading articles'):
+
             if os.path.exists(f'cache/{pmid}.pdf'):
                 logger.info('%s already downloaded', pmid)
+
+            elif pmid in pmids_without_texts:
+                logger.info('already tried to download %s', pmid)
+                result[pmid] = None
+                continue
 
             else:
                 url = metapub.FindIt(pmid).url
@@ -236,8 +245,11 @@ def get_article_texts(id_list: List[str]) -> dict:
 
                 result[pmid] = process_article(article_text)
             else:
+                pmids_without_texts.append(pmid)
                 result[pmid] = None
-
+    with open('cache/pmids_without_full_texts.txt', 'w',
+              encoding='utf-8') as f:
+        f.write('\n'.join(pmids_without_texts))
     return result
 
 
@@ -519,6 +531,18 @@ def gpt_continue_chat(messages: list,
         return messages
 
 
+def initialize_cache() -> None:
+    '''
+    create cache directory for full article texts
+    '''
+    #pylint: disable=consider-using-with
+    if not os.path.exists('cache'):
+        os.makedirs('cache')
+    if not os.path.exists('cache/pmids_without_full_texts.txt'):
+        open('cache/pmids_without_full_texts.txt', 'a',
+             encoding='utf-8').close()
+
+
 def main(user_query: str,
          pmid_list: list = None,
          reviews: bool = False,
@@ -533,8 +557,7 @@ def main(user_query: str,
     Search and summarize info from PubMed using GPT.
     '''
     embedder = SentenceTransformer(EMBEDDING_MODEL)
-    if not os.path.exists('cache'):
-        os.makedirs('cache')
+    initialize_cache()
     current_date = datetime.now().strftime('%Y/%m/%d')
     prompt = PROMPT.replace('{N_QUERIES}', '3').replace(
         '{CURRENT_DATE}', current_date)
