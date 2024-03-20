@@ -29,7 +29,8 @@ like "last n years". Novel queries should be very specific, scientific, \
 concise, and clear. They should be focused on a bit of different details of \
 the initial query. Try to use synonyms and do not repeat the same words \
 in the novel queries.
-Answer with {N_QUERIES} optimized queries separated by newlines.
+Answer with {N_QUERIES} optimized queries separated by newlines. DO NOT \
+NUMERATE QUERIES.
 
 Example 1:
 input: "CREATE_QUERY
