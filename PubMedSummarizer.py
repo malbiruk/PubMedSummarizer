@@ -316,6 +316,7 @@ def chat_completion_request(messages,
     '''
     gpt request function
     '''
+    # pylint: disable=not-an-iterable
     try:
         completion = CLIENT.chat.completions.create(
             model=model,
@@ -400,7 +401,14 @@ def gpt_generate_summary(messages: list,
                 user_prompt += f'Abstract:\n{cont}\n\n'
 
     # available context space
-    max_tokens = 16385 if GPT_MODEL.startswith('gpt-3.5') else 128000
+    model_name_to_max_tokens = {
+        'gpt-3.5-turbo': 16385,
+        'gpt-4-32k': 32768,
+        'gpt-4': 8192,
+        'gpt-4-turbo-preview': 128000
+    }
+
+    max_tokens = model_name_to_max_tokens[model]
 
     av_cont_space = int((max_tokens) * 4 - (len(user_prompt)) / 4)
     if len(user_prompt) > av_cont_space:
@@ -564,7 +572,7 @@ def main(user_query: str,
     gpt_summary, messages = gpt_generate_summary(messages,
                                                  user_query,
                                                  query_to_context,
-                                                 prompt=prompt)
+                                                 )
 
     with open('gpt_summary.txt', 'w', encoding='utf-8') as f:
         f.write(gpt_summary)
