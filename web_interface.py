@@ -132,7 +132,7 @@ def configure_sidebar() -> Settings:
 
         prompt = config.PROMPT
         if st.toggle('Edit system prompt'):
-            prompt = st.text_area('System prompt', prompt)
+            prompt = st.text_area('System prompt', prompt, height=300)
 
         if use_full_article_texts:
             embedder_name = st.selectbox(
