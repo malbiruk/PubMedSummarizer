@@ -172,8 +172,8 @@ def configure_sidebar() -> Settings:
         'chunk_size': chunk_size,
         'overlap': overlap,
     }
-    Settings = make_dataclass('Settings', settings.keys())
-    return Settings(**settings)
+    settings_class = make_dataclass('Settings', settings.keys())
+    return settings_class(**settings)
 
 
 def initialize_session_state() -> None:
