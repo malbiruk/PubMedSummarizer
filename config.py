@@ -21,9 +21,7 @@ Now I will describe each action.
 CREATE_QUERY
 If a message starts with CREATE_QUERY, user input will follow it. Your task \
 will be to convert this input (could be a question, query or keywords) to \
-{N_QUERIES} optimized queries for PubMed. You can specify publication type \
-[PT] (for example, review, systematic review, clicnical trial) and/or \
-publication date range, if the search will benefit from it or if the user asks so. \
+{N_QUERIES} optimized queries for PubMed. \
 Notice that current date is {CURRENT_DATE} for searches \
 like "last n years". Novel queries should be very specific, scientific, \
 concise, and clear. They should be focused on a bit of different details of \
