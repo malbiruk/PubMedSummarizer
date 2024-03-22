@@ -236,14 +236,20 @@ def get_article_texts(id_list: List[str]) -> dict:
                                     out=f'cache/{pmid}.pdf')
 
             if os.path.exists(f'cache/{pmid}.pdf'):
-                article_text = textract.process(
-                    f'cache/{pmid}.pdf',
-                    extension='pdf',
-                    method='pdftotext',
-                    encoding="utf_8",
-                ).decode()
+                try:
+                    article_text = textract.process(
+                        f'cache/{pmid}.pdf',
+                        extension='pdf',
+                        method='pdftotext',
+                        encoding="utf_8"
+                    ).decode()
 
-                result[pmid] = process_article(article_text)
+                    result[pmid] = process_article(article_text)
+                except UnicodeDecodeError as e:
+                    logging.error(
+                        'encountered UnicodeDecodeError, while processing '
+                        f'{pmid}.pdf, skipping...')
+                    result[pmid] = None
             else:
                 pmids_without_texts.append(pmid)
                 result[pmid] = None
