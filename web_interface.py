@@ -3,7 +3,6 @@ this is a web-interface for PubMedSummarizer.py
 should be run with `streamlit run web_interface.py`
 '''
 
-import os
 import re
 from dataclasses import make_dataclass
 from datetime import datetime
@@ -249,7 +248,8 @@ def publications_search_and_analysis(session_state: st.session_state,
             st.write('Downloading abstracts...')
 
         for q in optimized_queries:
-            session_state.opt_queries_to_pmids[q.replace('"', '').strip()] = None
+            session_state.opt_queries_to_pmids[
+                q.replace('"', '').strip()] = None
             if not settings.use_pmids_list:
                 status.update(label=f'Searching articles by query {q}...')
                 st.write(f'Searching articles by query {q}...')
