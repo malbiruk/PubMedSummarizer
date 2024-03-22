@@ -15,7 +15,7 @@ from PubMedSummarizer import (chat_completion_request, extract_terms,
                               get_abstracts, get_article_texts,
                               get_context_from_articles, gpt_generate_summary,
                               gpt_identify_relevant, gpt_process_query,
-                              messages_to_human_readable, initialize_cache)
+                              initialize_cache, messages_to_human_readable)
 from sentence_transformers import SentenceTransformer
 
 Settings = TypeVar('Settings')
@@ -108,7 +108,7 @@ def configure_sidebar() -> Settings:
             filter_by_pub_type = st.toggle('Filter by publication type')
             if filter_by_pub_type:
                 all_pub_types = [
-                    'Classical Article', 'Review', 'Systematic Review',
+                    'Review', 'Systematic Review',
                     'Clinical Trial', 'Meta-Analysis']
                 pub_types = []
                 for pub_type in all_pub_types:
@@ -185,6 +185,12 @@ def initialize_session_state() -> None:
     if "gpt_summary" not in st.session_state:
         st.session_state.gpt_summary = None
 
+    if 'opt_queries_to_pmids' not in st.session_state:
+        st.session_state.opt_queries_to_pmids = {}
+
+    if 'truncated' not in st.session_state:
+        st.session_state.truncated = False
+
     # starts search and analysis of publications
     if 'clicked' not in st.session_state:
         st.session_state.clicked = False
@@ -219,6 +225,9 @@ def publications_search_and_analysis(session_state: st.session_state,
     runs publications search, analysis, and summary generation
     '''
     session_state.prev_query = user_query
+    session_state.opt_queries_to_pmids = {}
+    session_state.truncated = False
+
     with st.status('Optimizing query...') as status:
         st.write('Optimizing query...')
         if settings.use_full_article_texts:
@@ -240,6 +249,7 @@ def publications_search_and_analysis(session_state: st.session_state,
             st.write('Downloading abstracts...')
 
         for q in optimized_queries:
+            session_state.opt_queries_to_pmids[q.replace('"', '').strip()] = None
             if not settings.use_pmids_list:
                 status.update(label=f'Searching articles by query {q}...')
                 st.write(f'Searching articles by query {q}...')
@@ -253,9 +263,10 @@ def publications_search_and_analysis(session_state: st.session_state,
                 pub_types=settings.pub_types
             )
             if not abstracts:
+                st.warning(f'No results found for query "{q}"')
                 continue
 
-            q = q.replace('"', '')
+            q = q.replace('"', '').strip()
             query = extract_terms(q)
 
             if settings.use_pmids_list:
@@ -273,7 +284,10 @@ def publications_search_and_analysis(session_state: st.session_state,
                                   settings.model_name,
                                   settings.temperature))
 
+            session_state.opt_queries_to_pmids[q] = relevant_pmids
             if not relevant_pmids:
+                st.warning('No relevant articles were selected'
+                           f' for query "{q}"')
                 continue
 
             if settings.use_full_article_texts:
@@ -307,16 +321,18 @@ def publications_search_and_analysis(session_state: st.session_state,
         status.update(label='Generating summary using provided context...')
         st.write('Generating summary using provided context...')
         session_state.script_messages = messages
-        gpt_summary, messages = gpt_generate_summary(messages,
-                                                     user_query,
-                                                     query_to_context,
-                                                     settings.model_name,
-                                                     settings.temperature)
+        gpt_summary, messages, truncated = gpt_generate_summary(
+            messages,
+            user_query,
+            query_to_context,
+            settings.model_name,
+            settings.temperature)
 
         status.update(label='Done!', state='complete', expanded=False)
         st.write('Done!')
 
-    session_state.gpt_summary = convert_pmids_to_links(gpt_summary)
+    session_state.truncated = truncated
+    session_state.gpt_summary = gpt_summary
     session_state.messages = [{'role': 'assistant',
                                'content': st.session_state.gpt_summary}]
     session_state.messages_with_context = messages
@@ -392,24 +408,37 @@ def main():
 
     # chat should be displayed after first run
     if st.session_state.gpt_summary:
-        chat_window(st.session_state, settings)
+        with st.popover('Show optimized queries and found PMIDs'):
+            st.write(st.session_state.opt_queries_to_pmids)
 
-        if None in [i['content'] for i in (
+        if not all(value is None
+                   for value in st.session_state.opt_queries_to_pmids.values()):
+
+            chat_window(st.session_state, settings)
+
+            if st.session_state.truncated or (None in [i['content'] for i in (
+                    st.session_state.script_messages
+                    + st.session_state.messages_with_context[1:])]):
+                st.warning(
+                    '__Some data was truncated in order '
+                    'to fit in the context window.__\n\n'
+                    'Try to reduce one of the following: '
+                    'n optimized queries, n articles per query, '
+                    'n chunks per article, chunk size, '
+                    'or choose a model with bigger '
+                    'context window or modify your query and try again.')
+
+            text_contents = messages_to_human_readable(
                 st.session_state.script_messages
-                + st.session_state.messages_with_context[1:])]:
-            st.warning(
-                '__Something went wrong, got some empty responses.__\n\n'
-                'Try to reduce one of the following: '
-                'n optimized queries, n articles per query, '
-                'n chunks per article, chunk size, '
-                'or choose a model with bigger '
-                'context window or modify your query and try again.')
+                + st.session_state.messages_with_context[1:])
+            st.download_button('Download full chat history', text_contents,
+                               'PubMedSummarizer_messages.txt',
+                               help='Includes messages generated during '
+                               'the search process')
 
-        text_contents = messages_to_human_readable(
-            st.session_state.script_messages
-            + st.session_state.messages_with_context[1:])
-        st.download_button('Download full chat history', text_contents,
-                           'PubMedSummarizer_messages.txt')
+        else:
+            st.error('__Nothing was found.__\n\nTry to adjust '
+                     'your search query and/or modify filters.')
 
 
 if __name__ == '__main__':

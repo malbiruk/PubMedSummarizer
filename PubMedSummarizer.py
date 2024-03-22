@@ -391,11 +391,14 @@ def gpt_identify_relevant(messages: list,
     for k, v in pmid_to_abstract.items():
         prompt += f'PMID: {k}\n'
         prompt += f'Abstract: {v}\n\n'
+
     messages.append({'role': 'user', 'content': prompt})
     answer = chat_completion_request(messages, model, temperature)
     messages.append({'role': 'assistant', 'content': answer})
+
     logger.info('relevant articles: "%s"', answer)
-    return answer.split() if answer is not None else []
+    return [i for i in answer.split()
+            if i in pmid_to_abstract] if answer is not None else []
 
 
 def gpt_generate_summary(messages: list,
@@ -431,17 +434,19 @@ def gpt_generate_summary(messages: list,
 
     max_tokens = model_name_to_max_tokens[model]
 
+    truncated = False
     av_cont_space = int((max_tokens) * 4 - (len(user_prompt)) / 4)
     if len(user_prompt) > av_cont_space:
         user_prompt = user_prompt[:av_cont_space]
         logger.warning('Truncated prompt in order to fit in context window.')
+        truncated = True
 
     messages = [messages[0]]
     messages.append({'role': 'user', 'content': user_prompt})
     answer = chat_completion_request(messages, model, temperature)
     messages.append({'role': 'assistant', 'content': answer})
     # logger.info('got summary: "%s"', answer)
-    return answer, messages
+    return answer, messages, truncated
 
 
 def extract_terms(pubmed_query):
@@ -535,7 +540,7 @@ def initialize_cache() -> None:
     '''
     create cache directory for full article texts
     '''
-    #pylint: disable=consider-using-with
+    # pylint: disable=consider-using-with
     if not os.path.exists('cache'):
         os.makedirs('cache')
     if not os.path.exists('cache/pmids_without_full_texts.txt'):
@@ -602,10 +607,10 @@ def main(user_query: str,
         f.write(messages_to_human_readable(messages)
                 + '\n\n----------\n\n')
 
-    gpt_summary, messages = gpt_generate_summary(messages,
-                                                 user_query,
-                                                 query_to_context,
-                                                 )
+    gpt_summary, messages, _ = gpt_generate_summary(messages,
+                                                    user_query,
+                                                    query_to_context,
+                                                    )
 
     with open('gpt_summary.txt', 'w', encoding='utf-8') as f:
         f.write(gpt_summary)
