@@ -1,7 +1,4 @@
 [theme]
-primaryColor="#20558a"
-backgroundColor="#f1f1f1"
+primaryColor="#01cc85"
+backgroundColor="#fafafa"
 secondaryBackgroundColor="#ffffff"
-
-[logger]
-level = "warning"
