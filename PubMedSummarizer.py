@@ -245,10 +245,10 @@ def get_article_texts(id_list: List[str]) -> dict:
                     ).decode()
 
                     result[pmid] = process_article(article_text)
-                except UnicodeDecodeError as e:
+                except UnicodeDecodeError:
                     logging.error(
                         'encountered UnicodeDecodeError, while processing '
-                        f'{pmid}.pdf, skipping...')
+                        '%s.pdf, skipping...', pmid)
                     result[pmid] = None
             else:
                 pmids_without_texts.append(pmid)
