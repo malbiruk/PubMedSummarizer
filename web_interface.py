@@ -380,7 +380,8 @@ def main():
     '''
     initialize_cache()
     st.set_page_config(page_title='PubMedSummarizer',
-                       page_icon=':bookmark_tabs:')
+                       page_icon='https://images.emojiterra.com/google/'
+                       'noto-emoji/unicode-15/color/1024px/1f4d1.png')
     customize_page_appearance()
     st.title('PubMedSummarizer', anchor=False)
     settings = configure_sidebar()
