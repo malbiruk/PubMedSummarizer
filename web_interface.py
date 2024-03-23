@@ -42,17 +42,20 @@ def click_button() -> None:
     st.session_state.clicked = True
 
 
-def convert_pmids_to_links(text: str) -> str:
+def convert_pmids_to_links(text: str, markdown: bool = True) -> str:
     '''
     convert 7 or 8 digits words to links to pubmed (markdown format)
     '''
     pattern = r'(?<!\[)(?<!\d)(\d{7,8})(?!\d)(?!\])'
-    replacement = r'[\1](https://pubmed.ncbi.nlm.nih.gov/\1/)'
+    if markdown:
+        replacement = r'[\1](https://pubmed.ncbi.nlm.nih.gov/\1/)'
+    else:
+        replacement = r'https://pubmed.ncbi.nlm.nih.gov/\1/'
     result = re.sub(pattern, replacement, text)
     return result
 
 
-def configure_sidebar() -> Settings:
+def sidebar() -> Settings:
     '''
     creates sidebar with settings, returns settings as a dataclass
     (basically a dict, where keys are attributes)
@@ -276,16 +279,20 @@ def publications_search_and_analysis(session_state: st.session_state,
                 status.update(label='Getting relevant PMIDs...')
                 st.write('Getting relevant PMIDs...')
 
-            relevant_pmids = (pmid_list if settings.use_pmids_list
-                              else gpt_identify_relevant(
-                                  messages,
-                                  query,
-                                  abstracts,
-                                  settings.model_name,
-                                  settings.temperature))
+            relevant_pmids, truncated_1 = (
+                pmid_list if settings.use_pmids_list
+                else gpt_identify_relevant(
+                    messages,
+                    query,
+                    abstracts,
+                    settings.model_name,
+                    settings.temperature))
 
-            session_state.opt_queries_to_pmids[q] = relevant_pmids
-            if not relevant_pmids:
+            if relevant_pmids:
+                session_state.opt_queries_to_pmids[q] = [
+                    int(pmid)
+                    for pmid in relevant_pmids]
+            else:
                 st.warning('No relevant articles were selected'
                            f' for query "{q}"')
                 continue
@@ -321,7 +328,7 @@ def publications_search_and_analysis(session_state: st.session_state,
         status.update(label='Generating summary using provided context...')
         st.write('Generating summary using provided context...')
         session_state.script_messages = messages
-        gpt_summary, messages, truncated = gpt_generate_summary(
+        gpt_summary, messages, truncated_2 = gpt_generate_summary(
             messages,
             user_query,
             query_to_context,
@@ -331,7 +338,7 @@ def publications_search_and_analysis(session_state: st.session_state,
         status.update(label='Done!', state='complete', expanded=False)
         st.write('Done!')
 
-    session_state.truncated = truncated
+    session_state.truncated = any((truncated_1, truncated_2))
     session_state.gpt_summary = gpt_summary
     session_state.messages = [{'role': 'assistant',
                                'content': st.session_state.gpt_summary}]
@@ -384,7 +391,7 @@ def main():
                        'noto-emoji/unicode-15/color/1024px/1f4d1.png')
     customize_page_appearance()
     st.title('PubMedSummarizer', anchor=False)
-    settings = configure_sidebar()
+    settings = sidebar()
 
     initialize_session_state()
 
@@ -417,9 +424,7 @@ def main():
 
             chat_window(st.session_state, settings)
 
-            if st.session_state.truncated or (None in [i['content'] for i in (
-                    st.session_state.script_messages
-                    + st.session_state.messages_with_context[1:])]):
+            if st.session_state.truncated:
                 st.warning(
                     '__Some data was truncated in order '
                     'to fit in the context window.__\n\n'

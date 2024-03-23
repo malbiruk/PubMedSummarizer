@@ -384,27 +384,74 @@ def gpt_process_query(messages: list,
     return answer.split('\n')
 
 
+def truncate_input(model: str, user_prompt: str, prev_messages: list) -> tuple:
+    '''
+    truncate input message if the dialogue exceeds context window of the model
+    '''
+    truncated = False
+    # available context space
+    model_name_to_max_tokens = {
+        'gpt-3.5-turbo': 16385,
+        'gpt-4-32k': 32768,
+        'gpt-4': 8192,
+        'gpt-4-turbo-preview': 128000
+    }
+
+    max_tokens = model_name_to_max_tokens[model]
+
+    n_words_messages = 0
+    for message in prev_messages:
+        if message['content']:
+            n_words_messages += len(message['content']
+                                    .replace('\n', ' ')
+                                    .replace('  ', ' ')
+                                    .split())
+
+    # 1 token -- 4 symbols, 1 word -- 4/3 tokens, 16/3 symbols
+    # available context space (in symbols)
+    av_cont_space = int((max_tokens) * 4 - (len(user_prompt)
+                                        + n_words_messages) * 16 / 3)
+    if len(user_prompt) > av_cont_space:
+        if av_cont_space > 0:
+            user_prompt = user_prompt[:av_cont_space]
+        elif n_words_messages * 4/3 > max_tokens:
+            user_prompt = None
+        else:
+            until = int(max_tokens * 4 - n_words_messages * 16 / 3)
+            user_prompt = user_prompt[:until]
+        logger.warning('Truncated prompt in order to fit in context window.')
+        truncated = True
+
+    return user_prompt, truncated
+
+
 def gpt_identify_relevant(messages: list,
                           query: str,
                           pmid_to_abstract: dict,
                           model=GPT_MODEL,
-                          temperature=TEMPERATURE) -> list:
+                          temperature=TEMPERATURE) -> tuple:
     '''
     identify relevant articles to the query by abstracts
     '''
+    truncated = False
     logger.info('identifying relevant articles for query: "%s"...', query)
     prompt = f'IDENTIFY_RELEVANT\nQuery: {query}\n\n'
     for k, v in pmid_to_abstract.items():
         prompt += f'PMID: {k}\n'
         prompt += f'Abstract: {v}\n\n'
 
-    messages.append({'role': 'user', 'content': prompt})
-    answer = chat_completion_request(messages, model, temperature)
-    messages.append({'role': 'assistant', 'content': answer})
+    prompt, truncated = truncate_input(model, prompt, messages)
+    if prompt:
+        messages.append({'role': 'user', 'content': prompt})
+        answer = chat_completion_request(messages, model, temperature)
+        messages.append({'role': 'assistant', 'content': answer})
 
-    logger.info('relevant articles: "%s"', answer)
-    return [i for i in answer.split()
-            if i in pmid_to_abstract] if answer is not None else []
+        logger.info('relevant articles: "%s"', answer)
+        result = [i for i in answer.split()
+                  if i in pmid_to_abstract] if answer is not None else []
+    else:
+        result = []
+    return result, truncated
 
 
 def gpt_generate_summary(messages: list,
@@ -430,24 +477,8 @@ def gpt_generate_summary(messages: list,
             else:
                 user_prompt += f'Abstract:\n{cont}\n\n'
 
-    # available context space
-    model_name_to_max_tokens = {
-        'gpt-3.5-turbo': 16385,
-        'gpt-4-32k': 32768,
-        'gpt-4': 8192,
-        'gpt-4-turbo-preview': 128000
-    }
-
-    max_tokens = model_name_to_max_tokens[model]
-
-    truncated = False
-    av_cont_space = int((max_tokens) * 4 - (len(user_prompt)) / 4)
-    if len(user_prompt) > av_cont_space:
-        user_prompt = user_prompt[:av_cont_space]
-        logger.warning('Truncated prompt in order to fit in context window.')
-        truncated = True
-
     messages = [messages[0]]
+    user_prompt, truncated = truncate_input(model, user_prompt, messages)
     messages.append({'role': 'user', 'content': user_prompt})
     answer = chat_completion_request(messages, model, temperature)
     messages.append({'role': 'assistant', 'content': answer})
@@ -591,8 +622,8 @@ def main(user_query: str,
         q = q.replace('"', '')
         query = extract_terms(q)
 
-        relevant_pmids = (gpt_identify_relevant(messages, query, abstracts)
-                          if pmid_list is None else pmid_list)
+        relevant_pmids, _ = (gpt_identify_relevant(messages, query, abstracts)
+                             if pmid_list is None else pmid_list)
 
         if not relevant_pmids:
             continue

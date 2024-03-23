@@ -23,7 +23,7 @@ If a message starts with CREATE_QUERY, user input will follow it. Your task \
 will be to convert this input (could be a question, query or keywords) to \
 {N_QUERIES} optimized queries for PubMed. \
 Notice that current date is {CURRENT_DATE} for searches \
-like "last n years". Novel queries should be very specific, scientific, \
+like "last n years". Novel {N_QUERIES} queries should be scientific, \
 concise, and clear. They should be focused on a bit of different details of \
 the initial query. Try to use synonyms and do not repeat the same words \
 in the novel queries.
@@ -110,7 +110,7 @@ You should use the information \
 provided in these context chunks and abstracts. You also should provide sources \
 i.e. PMIDs of the articles from which you took particluar pieces of information \
 for your summary/answer. YOUR SUMMARY SHOULD BE ABOUT 250-300 WORDS. \
-USE ONLY INFORMATION PROVIDED IN THE INPUT.
+USE ONLY INFORMATION PROVIDED IN THE INPUT. Try to cite all articles provided in the context.
 Example of your final answer format:
 Although non-avian dinosaurs dominated terrestrial ecosystems until the end-Cretaceous, both a marked increase of extinction and a decrease in their ability to replace extinct species led dinosaurs to decline well before the K/Pg extinction (PMID: 34188028). Even though the latest Cretaceous dinosaur fossil record is geographically dominated by Laurasian taxa, the diversity patterns observed here are based on continent-scale samples that reflect a substantial part of latest Cretaceous dinosaur global diversity. Long-term environmental changes led to restructuring of terrestrial ecosystems that made dinosaurs particularly prone to extinction (PMID: 23112149). These results are also consistent with modelling studies of ecological food-webs (PMID: 22549833) and suggest that loss of key herbivorous dinosaurs would have made terminal Maastrichtian ecosystems—in contrast with ecosystems from earlier in the Late Cretaceous (Campanian)—more susceptible to cascading extinctions by an external forcing mechanism. We propose that a combination of global climate cooling, the diversity of herbivores, and age-dependent extinction had a negative impact on dinosaur extinction in the Late Cretaceous; these factors impeded their recovery from the final catastrophic event (PMID: 34188028).
 
