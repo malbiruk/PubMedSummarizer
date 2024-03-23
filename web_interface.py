@@ -96,11 +96,11 @@ def sidebar() -> Settings:
 
         n_queries = st.slider('Generate ___n___ optimized queries '
                               'from input query',
-                              1, 10, 3)
+                              1, 10, 5)
 
         if not use_pmids_list:
             n_articles = st.slider('Retrieve top ___n___ articles per query',
-                                   1, 25, 10)
+                                   5, 60, 30, 5)
             filter_by_year = st.toggle('Filter by publication date')
             if filter_by_year:
                 from_year = st.slider(
@@ -229,6 +229,8 @@ def publications_search_and_analysis(session_state: st.session_state,
     session_state.prev_query = user_query
     session_state.opt_queries_to_pmids = {}
     session_state.truncated = False
+    truncated_1 = False
+    truncated_2 = False
 
     with st.status('Optimizing query...') as status:
         st.write('Optimizing query...')
@@ -250,6 +252,7 @@ def publications_search_and_analysis(session_state: st.session_state,
             status.update(label='Downloading abstracts...')
             st.write('Downloading abstracts...')
 
+        all_pmids = [] # ensure unique pmids only between queries
         for q in optimized_queries:
             session_state.opt_queries_to_pmids[
                 q.strip()] = None
@@ -289,9 +292,12 @@ def publications_search_and_analysis(session_state: st.session_state,
                     settings.temperature))
 
             if relevant_pmids:
+                relevant_pmids = [i for i in relevant_pmids
+                                  if not i in all_pmids]
                 session_state.opt_queries_to_pmids[q] = [
                     int(pmid)
                     for pmid in relevant_pmids]
+                all_pmids.extend(relevant_pmids)
             else:
                 st.warning('No relevant articles were selected'
                            f' for query "{q}"')

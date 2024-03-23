@@ -431,10 +431,11 @@ def gpt_identify_relevant(messages: list,
         prompt += f'PMID: {k}\n'
         prompt += f'Abstract: {v}\n\n'
 
-    prompt, truncated = truncate_input(model, prompt, messages)
+    prompt, truncated = truncate_input(model, prompt, [messages[0]])
     if prompt:
         messages.append({'role': 'user', 'content': prompt})
-        answer = chat_completion_request(messages, model, temperature)
+        answer = chat_completion_request([messages[0]] + [messages[-1]],
+                                         model, temperature)
         messages.append({'role': 'assistant', 'content': answer})
 
         logger.info('relevant articles: "%s"', answer)
@@ -601,6 +602,7 @@ def main(user_query: str,
     if pmid_list is not None:
         pmid_list = [str(i) for i in pmid_list]
 
+    all_pmids = []
     for q in optimized_queries:
         abstracts = get_abstracts(q,
                                   n_res=n_articles,
@@ -618,6 +620,8 @@ def main(user_query: str,
 
         if not relevant_pmids:
             continue
+        else:
+            relevant_pmids = [i for i in relevant_pmids if not i in all_pmids]
 
         articles = get_article_texts(relevant_pmids)
         context_chunks, cosine_similarity_scores = (
