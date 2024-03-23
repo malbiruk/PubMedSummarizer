@@ -13,7 +13,7 @@ Automatically search for information in PubMed, obtain articles and/or abstracts
 8. After that GPT works just as a chat-bot with all these context
 
 ## Installation
-`docker-compose build && docker-compose up`
+`docker-compose build && docker-compose up`<br>
 Default address: `http://0.0.0.0:8505`
 
 ## Examples
