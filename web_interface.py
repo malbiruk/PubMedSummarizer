@@ -252,7 +252,7 @@ def publications_search_and_analysis(session_state: st.session_state,
 
         for q in optimized_queries:
             session_state.opt_queries_to_pmids[
-                q.replace('"', '').strip()] = None
+                q.strip()] = None
             if not settings.use_pmids_list:
                 status.update(label=f'Searching articles by query {q}...')
                 st.write(f'Searching articles by query {q}...')
@@ -269,8 +269,8 @@ def publications_search_and_analysis(session_state: st.session_state,
                 st.warning(f'No results found for query "{q}"')
                 continue
 
-            q = q.replace('"', '').strip()
-            query = extract_terms(q)
+            q = q.strip()
+            query = extract_terms(q.replace('"', ''))
 
             if settings.use_pmids_list:
                 status.update(label=f'Applying query {query}...')
@@ -416,8 +416,14 @@ def main():
 
     # chat should be displayed after first run
     if st.session_state.gpt_summary:
-        with st.popover('Show optimized queries and found PMIDs'):
-            st.write(st.session_state.opt_queries_to_pmids)
+        with st.popover('Show optimized queries and found relevant articles'):
+            for query, pmids in st.session_state.opt_queries_to_pmids.items():
+                st.write(f'__{query}__')
+                if pmids:
+                    st.write(convert_pmids_to_links(
+                        ', '.join([str(i) for i in pmids])))
+                else:
+                    st.write('None')
 
         if not all(value is None
                    for value in st.session_state.opt_queries_to_pmids.values()):
