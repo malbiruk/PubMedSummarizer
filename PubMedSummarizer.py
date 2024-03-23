@@ -399,26 +399,17 @@ def truncate_input(model: str, user_prompt: str, prev_messages: list) -> tuple:
 
     max_tokens = model_name_to_max_tokens[model]
 
-    n_words_messages = 0
+    len_messages = 0
     for message in prev_messages:
         if message['content']:
-            n_words_messages += len(message['content']
-                                    .replace('\n', ' ')
-                                    .replace('  ', ' ')
-                                    .split())
+            len_messages += len(message['content'])
 
-    # 1 token -- 4 symbols, 1 word -- 4/3 tokens, 16/3 symbols
-    # available context space (in symbols)
-    av_cont_space = int((max_tokens) * 4 - (len(user_prompt)
-                                            + n_words_messages) * 16 / 3)
-    if len(user_prompt) * 16 / 3 > av_cont_space:
-        if av_cont_space > 0:
-            user_prompt = user_prompt[:av_cont_space]
-        elif n_words_messages * 4 / 3 > max_tokens:
+    # 1 token == 4 symbols
+    if (len(user_prompt) + len_messages) > max_tokens * 4:
+        if len_messages > max_tokens * 4:
             user_prompt = None
         else:
-            until = int(max_tokens * 4 - n_words_messages * 16 / 3)
-            user_prompt = user_prompt[:until]
+            user_prompt = user_prompt[:(max_tokens * 4 - len_messages)]
         logger.warning('Truncated prompt in order to fit in context window.')
         truncated = True
 
