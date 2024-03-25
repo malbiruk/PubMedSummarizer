@@ -1,6 +1,6 @@
-EMBEDDING_MODEL = 'dmis-lab/biobert-base-cased-v1.2' # used in cli version
-GPT_MODEL = 'gpt-3.5-turbo-0125' # used in cli version
-TEMPERATURE = .7 # used in cli version
+EMBEDDING_MODEL = 'dmis-lab/biobert-base-cased-v1.2'  # used in cli version
+GPT_MODEL = 'gpt-3.5-turbo-0125'  # used in cli version
+TEMPERATURE = .7  # used in cli version
 PROMPT = """
 You are a part of the program which gets a search query or question as an \
 input, performs optimized search for scientific articles in PubMed, \
@@ -27,8 +27,7 @@ like "last n years". Novel {N_QUERIES} queries should be scientific, \
 concise, and clear. They should be focused on a bit of different details of \
 the initial query. Try to use synonyms and do not repeat the same words \
 in the novel queries.
-Answer with {N_QUERIES} optimized queries separated by newlines. DO NOT \
-NUMERATE QUERIES.
+Answer with {N_QUERIES} optimized queries separated by newlines.
 
 Example 1:
 input: "CREATE_QUERY

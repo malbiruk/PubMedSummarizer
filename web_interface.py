@@ -8,14 +8,15 @@ from dataclasses import make_dataclass
 from datetime import datetime
 from typing import TypeVar
 
-import config
 import streamlit as st
+from sentence_transformers import SentenceTransformer
+
+import config
 from PubMedSummarizer import (chat_completion_request, extract_terms,
                               get_abstracts, get_article_texts,
                               get_context_from_articles, gpt_generate_summary,
                               gpt_identify_relevant, gpt_process_query,
                               initialize_cache, messages_to_human_readable)
-from sentence_transformers import SentenceTransformer
 
 Settings = TypeVar('Settings')
 
@@ -55,7 +56,7 @@ def convert_pmids_to_links(text: str, markdown: bool = True) -> str:
     return result
 
 
-def sidebar() -> Settings:
+def sidebar() -> object:
     '''
     creates sidebar with settings, returns settings as a dataclass
     (basically a dict, where keys are attributes)
@@ -81,8 +82,8 @@ def sidebar() -> Settings:
         use_full_article_texts = st.toggle(
             'Use full articles\' texts',
             help='By default only articles\' abstracts are used. '
-            'This option implies downloading and embedding articles on-the-fly '
-            'followed by semantic search. '
+            'This option implies downloading and embedding articles on-the-fly'
+            ' followed by semantic search. '
             'It may provide more acccurate results and context, but '
             'keep in mind that it may take more than 10 minutes per run '
             '(depends on n queries and n articles). For limited list of '
@@ -252,7 +253,7 @@ def publications_search_and_analysis(session_state: st.session_state,
             status.update(label='Downloading abstracts...')
             st.write('Downloading abstracts...')
 
-        all_pmids = [] # ensure unique pmids only between queries
+        all_pmids = []  # ensure unique pmids only between queries
         for q in optimized_queries:
             session_state.opt_queries_to_pmids[
                 q.strip()] = None
@@ -293,7 +294,7 @@ def publications_search_and_analysis(session_state: st.session_state,
 
             if relevant_pmids:
                 relevant_pmids = [i for i in relevant_pmids
-                                  if not i in all_pmids]
+                                  if i not in all_pmids]
                 session_state.opt_queries_to_pmids[q] = [
                     int(pmid)
                     for pmid in relevant_pmids]
@@ -431,8 +432,9 @@ def main():
                 else:
                     st.write('None')
 
-        if not all(value is None
-                   for value in st.session_state.opt_queries_to_pmids.values()):
+        if not all(
+            value is None
+                for value in st.session_state.opt_queries_to_pmids.values()):
 
             chat_window(st.session_state, settings)
 

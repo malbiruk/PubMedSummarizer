@@ -5,3 +5,4 @@ gpt_*
 out.log
 default/
 .remote-sync.json
+.nvim

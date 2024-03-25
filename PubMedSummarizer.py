@@ -21,17 +21,19 @@ import nltk
 import textract
 import torch
 from Bio import Entrez, Medline
-from config import EMBEDDING_MODEL, GPT_MODEL, PROMPT, TEMPERATURE
 from dotenv import load_dotenv
 from openai import OpenAI
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.progress import (BarColumn, MofNCompleteColumn, Progress,
-                           ProgressColumn, SpinnerColumn, Text, TextColumn,
+                           ProgressColumn, SpinnerColumn, TextColumn,
                            TimeElapsedColumn, TimeRemainingColumn)
+from rich.text import Text
 from rich_argparse import RichHelpFormatter
 from scidownl import scihub_download
 from sentence_transformers import SentenceTransformer, util
+
+from config import EMBEDDING_MODEL, GPT_MODEL, PROMPT, TEMPERATURE
 
 load_dotenv()
 
@@ -48,7 +50,7 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 class SpeedColumn(ProgressColumn):
     '''speed column for progress bar'''
 
-    def render(self, task: 'Task') -> Text:
+    def render(self, task) -> Text:
         if task.speed is None:
             return Text('- it/s', style='red')
         return Text(f'{task.speed:.2f} it/s', style='red')
@@ -71,7 +73,8 @@ progress_bar = Progress(
 
 proxy_url = os.environ.get('OPENAI_PROXY_URL')
 
-CLIENT = (OpenAI(api_key=OPENAI_API_KEY) if proxy_url is None or proxy_url == ""
+CLIENT = (OpenAI(api_key=OPENAI_API_KEY)
+          if proxy_url is None or proxy_url == ""
           else OpenAI(api_key=OPENAI_API_KEY,
                       http_client=httpx.Client(proxy=proxy_url)))
 # embedder_mpnet = SentenceTransformer('all-mpnet-base-v2')
@@ -82,7 +85,7 @@ except LookupError:
     nltk.download('punkt')
 
 
-def initialize_logging(level=logging.INFO, folder: str = '.') -> None:
+def initialize_logging(level=logging.INFO, folder: str = '.'):
     '''
     initialize logging (default to file 'out.log' in folder +
     rich to command line)
@@ -104,7 +107,7 @@ logger = initialize_logging()
 def search(query: str,
            n_res: int,
            email: str
-           ) -> dict:
+           ):
     '''
     initialize search
     '''
@@ -117,9 +120,9 @@ def search(query: str,
     return Entrez.read(handle)
 
 
-def fetch_details(id_list: List[int],
+def fetch_details(id_list: List[str],
                   email: str
-                  ) -> dict:
+                  ):
     '''
     fetch data by id from initial search
     '''
@@ -135,10 +138,10 @@ def fetch_details(id_list: List[int],
 def get_abstracts(query: str,
                   n_res: int = 10,
                   email: str = 'fiyefiyefiye@gmail.com',
-                  pmid_list: list = None,
+                  pmid_list=None,
                   reviews: bool = False,
-                  pub_types: list = None,
-                  from_year: int = None,
+                  pub_types=None,
+                  from_year=None,
                   ) -> dict:
     '''
     get abstracts by search query
@@ -152,19 +155,21 @@ def get_abstracts(query: str,
                  + ')')
     if from_year:
         current_date = datetime.now().strftime('%Y/%m/%d')
-        query = (query
-                 + f' AND ("{from_year}/01/01"[PDat] : "{current_date}"[PDat])')
+        query = (
+            query
+            + f' AND ("{from_year}/01/01"[PDat] : "{current_date}"[PDat])')
 
     if pmid_list is None:
         logger.info('getting abstracts for query "%s"...', query)
         results = search(query, n_res, email)
-    id_list = results['IdList'] if pmid_list is None else pmid_list
+    id_list = (results['IdList']
+               if pmid_list is None else pmid_list)
     papers = fetch_details(id_list, email)
     return {paper.get('PMID'): paper.get('AB') for paper in papers
             if paper.get('PMID') is not None and paper.get('AB') is not None}
 
 
-def process_article(article_text: str) -> List[str]:
+def process_article(article_text: str) -> str:
     '''
     split article to sentences and return part between introduction
     or keywords asnd references
@@ -226,7 +231,7 @@ def get_article_texts(id_list: List[str]) -> dict:
             else:
                 url = metapub.FindIt(pmid).url
 
-                if not url is None:
+                if url is not None:
                     logger.info('downloading %s from PMC', pmid)
                     urlretrieve(url, f'cache/{pmid}.pdf')
                     time.sleep(2)
@@ -328,7 +333,8 @@ def get_context_from_articles(query: str,
                                         v,
                                         top_k=n_res)
             pmid_to_context[k] = [
-                pmid_to_chunked[k][hit['corpus_id']] for hit in hits[0]]
+                pmid_to_chunked[k][hit['corpus_id']]
+                for hit in hits[0]]
             pmid_to_cos[k] = [hit['score'] for hit in hits[0]]
         else:
             pmid_to_context[k] = None
@@ -360,7 +366,7 @@ def chat_completion_request(messages,
 
         for key, value in dict(completion.usage).items():
             if key in TOKENS_USED:
-                TOKENS_USED[key] += value
+                TOKENS_USED[key] += int(value)
 
         return completion.choices[0].message.content
     except Exception as e:
@@ -371,7 +377,7 @@ def chat_completion_request(messages,
 def gpt_process_query(messages: list,
                       user_query: str,
                       model=GPT_MODEL,
-                      temperature=TEMPERATURE) -> List[dict]:
+                      temperature=TEMPERATURE) -> list:
     '''
     optimize user query to multiple searches
     '''
@@ -621,7 +627,7 @@ def main(user_query: str,
         if not relevant_pmids:
             continue
         else:
-            relevant_pmids = [i for i in relevant_pmids if not i in all_pmids]
+            relevant_pmids = [i for i in relevant_pmids if i not in all_pmids]
 
         articles = get_article_texts(relevant_pmids)
         context_chunks, cosine_similarity_scores = (
