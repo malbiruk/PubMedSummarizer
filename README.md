@@ -4,11 +4,12 @@ Automatically search for information in PubMed, obtain articles and/or abstracts
 
 ## Pipeline
 1. User inputs their query (optional: and list of PMIDs using `--pmid_list` flag, in that case the searching part is skipped, and program will analyze articles specified, regarding the query)
-2. GPT-3.5 processes it to make up to 3 optimized queries for PubMed
-3. The program passes this optimal queries to PubMed search and returns abstracts of top 10 results
+2. GPT-3.5 processes it to make several optimized queries for PubMed
+3. The program passes this optimal queries to PubMed search and returns abstracts of top results
 4. GPT-3.5 "reads" these abstracts, picks only relevant ones and returns their PMIDs
-5. The program finds full articles of these relevant PMIDs in PMC and Sci-Hub if not found in PMC
-6. The program tokenizes articles by sentences and embeds it as well as query provided in the 2nd point and performs semantic search, returning top 5 found context chunks with their score (cosine similarity) from each of the articles. Also if can't find/download article, it just returns the abstract of corresponding article.
+5. Optional time consuming steps:
+    1. The program finds full articles of these relevant PMIDs in PMC and Sci-Hub if not found in PMC
+    6. The program tokenizes articles by sentences and embeds it as well as query provided in the 2nd point and performs semantic search, returning top 5 found context chunks with their score (cosine similarity) from each of the articles. Also if can't find/download article, it just returns the abstract of corresponding article.
 7. GPT-3.5 gets all these article chunks, cosine similarity scores, and abstracts along with their PMIDs and in response generates brief summary with relevant information (obtained only from these abstracts and articles), answering to the initial query (point 1) and provides corresponding PMIDs for each piece of information it writes in the answer.
 8. After that GPT works just as a chat-bot with all these context
 
