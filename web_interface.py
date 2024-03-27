@@ -63,9 +63,9 @@ def sidebar() -> object:
     '''
     # pylint: disable=too-many-locals
     with st.sidebar:
-        st.title('Settings')
+        # st.title('Settings')
 
-        st.header('Search settings')
+        st.title('Search settings')
 
         # initialize variables
         from_year = None
@@ -119,32 +119,9 @@ def sidebar() -> object:
                         pub_types.append(pub_type)
         # email = st.text_input('Email for Entrez', 'fiyefiyefiye@gmail.com')
 
-        st.header('Models')
-        model_name = st.selectbox('GPT model',
-                                  ['gpt-3.5-turbo (16k)',
-                                   # 'gpt-4-32k (32k)',
-                                   'gpt-4 (8k)',
-                                   'gpt-4-turbo-preview (128k)',
-                                   ])
-
-        model_name = model_name.split(maxsplit=1)[0]
-        if st.toggle('Modify temperature (defaul=0.2)'):
-            temperature = st.slider('Temperature', 0., 1., .2, .1)
-        else:
-            temperature = .2
-
-        prompt = config.PROMPT
-        if st.toggle('Edit system prompt'):
-            prompt = st.text_area('System prompt', prompt, height=300)
-
         if use_full_article_texts:
-            embedder_name = st.selectbox(
-                'Embedding model',
-                ['dmis-lab/biobert-base-cased-v1.2',
-                 'msmarco-distilbert-base-v4'])
-
             st.header(
-                'Chunking',
+                'Embedding',
                 help='When full articles\' texts are used, '
                 'they are split into chunks consisting '
                 'of several sentences. After that, these chunks are '
@@ -152,12 +129,38 @@ def sidebar() -> object:
                 'by input query is performed, '
                 'and the model gets top n chunks as a context '
                 'from each article.')
+            embedder_name = st.selectbox(
+                'Embedding model',
+                ['dmis-lab/biobert-base-cased-v1.2',
+                 'msmarco-distilbert-base-v4'])
+
             n_chunks = st.slider('Retrieve top ___n___ chunks per article',
                                  1, 20, 5)
             chunk_size = st.slider('Chunk size, sentences',
                                    1, 20, 6)
             overlap = st.slider('Chunks overlap, %', 0, 50, 30, 5)
             overlap = round(overlap / 100 * chunk_size)
+
+    st.header('Model')
+    col1, col2 = st.columns([1,1])
+    with col1:
+        model_name = st.selectbox('GPT model',
+                                  ['gpt-3.5-turbo (16k)',
+                                   # 'gpt-4-32k (32k)',
+                                   'gpt-4 (8k)',
+                                   'gpt-4-turbo-preview (128k)',
+                                   ])
+
+    model_name = model_name.split(maxsplit=1)[0]
+
+    with col2:
+    # if st.toggle('Modify temperature (defaul=0.2)'):
+        temperature = st.number_input('Temperature', 0., 1., .2, .1)
+
+    prompt = config.PROMPT
+    if st.toggle('Edit system prompt'):
+        prompt = st.text_area('System prompt', prompt, height=300)
+
     settings = {
         'from_year': from_year,
         'pub_types': pub_types,
@@ -357,6 +360,7 @@ def chat_window(session_state: st.session_state, settings: Settings) -> None:
     '''
     create chat window and allow user to chat with the model
     '''
+    st.header('Chat')
     with st.container():
         messages_box = st.container(height=500)
         for message in st.session_state.messages:
@@ -402,11 +406,13 @@ def main():
 
     initialize_session_state()
 
-    st.write("")
+    st.header('Search')
+    # st.write('')
+
     col1, col2 = st.columns([10, 1])
     with col1:
         user_query = st.text_input(
-            'User query',
+            'Search',
             placeholder='Enter your scientific question, '
             'query or keywords',
             label_visibility='collapsed')
