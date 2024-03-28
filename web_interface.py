@@ -89,7 +89,7 @@ def sidebar() -> object:
             '(depends on n queries and n articles). For limited list of '
             'articles it may be quite useful.',
         )
-        use_pmids_list = st.toggle('Provide list of PMIDs')
+        use_pmids_list = st.toggle('Provide a list of PMIDs')
         if use_pmids_list:
             pmid_list = st.text_input(
                 'List of PMIDs (separated by spaces)').split()
