@@ -26,10 +26,6 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from rich.console import Console
 from rich.logging import RichHandler
-from rich.progress import (BarColumn, MofNCompleteColumn, Progress,
-                           ProgressColumn, SpinnerColumn, TextColumn,
-                           TimeElapsedColumn, TimeRemainingColumn)
-from rich.text import Text
 from rich_argparse import RichHelpFormatter
 from scidownl import scihub_download
 from sentence_transformers import SentenceTransformer, util
@@ -46,31 +42,6 @@ TOKENS_USED = {"completion_tokens": 0,
 
 # logging.root.handlers = []
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-
-
-class SpeedColumn(ProgressColumn):
-    '''speed column for progress bar'''
-
-    def render(self, task) -> Text:
-        if task.speed is None:
-            return Text('- it/s', style='red')
-        return Text(f'{task.speed:.2f} it/s', style='red')
-
-
-progress_bar = Progress(
-    TextColumn('[bold]{task.description}'),
-    SpinnerColumn('simpleDots'),
-    TextColumn('[progress.percentage]{task.percentage:>3.0f}%'),
-    BarColumn(),
-    MofNCompleteColumn(),
-    TextColumn('|'),
-    SpeedColumn(),
-    TextColumn('|'),
-    TimeElapsedColumn(),
-    TextColumn('|'),
-    TimeRemainingColumn(),
-)
-
 
 proxy_url = os.environ.get('OPENAI_PROXY_URL')
 
@@ -217,48 +188,46 @@ def get_article_texts(id_list: List[str]) -> dict:
     with open('cache/pmids_without_full_texts.txt',
               encoding='utf-8') as f:
         pmids_without_texts = f.readlines()
-    with progress_bar as p:
-        for pmid in p.track(id_list,
-                            description='downloading articles'):
+    logger.info('downloading articles...')
+    for pmid in id_list:
+        if os.path.exists(f'cache/{pmid}.pdf'):
+            logger.info('%s already downloaded', pmid)
 
-            if os.path.exists(f'cache/{pmid}.pdf'):
-                logger.info('%s already downloaded', pmid)
+        elif pmid in pmids_without_texts:
+            logger.info('already tried to download %s', pmid)
+            result[pmid] = None
+            continue
 
-            elif pmid in pmids_without_texts:
-                logger.info('already tried to download %s', pmid)
-                result[pmid] = None
-                continue
+        else:
+            url = metapub.FindIt(pmid).url
 
+            if url is not None:
+                logger.info('downloading %s from PMC', pmid)
+                urlretrieve(url, f'cache/{pmid}.pdf')
+                time.sleep(2)
             else:
-                url = metapub.FindIt(pmid).url
+                logger.info('downloading %s from Sci-Hub', pmid)
+                scihub_download(pmid, paper_type='pmid',
+                                out=f'cache/{pmid}.pdf')
 
-                if url is not None:
-                    logger.info('downloading %s from PMC', pmid)
-                    urlretrieve(url, f'cache/{pmid}.pdf')
-                    time.sleep(2)
-                else:
-                    logger.info('downloading %s from Sci-Hub', pmid)
-                    scihub_download(pmid, paper_type='pmid',
-                                    out=f'cache/{pmid}.pdf')
+        if os.path.exists(f'cache/{pmid}.pdf'):
+            try:
+                article_text = textract.process(
+                    f'cache/{pmid}.pdf',
+                    extension='pdf',
+                    method='pdftotext',
+                    encoding="utf_8"
+                ).decode()
 
-            if os.path.exists(f'cache/{pmid}.pdf'):
-                try:
-                    article_text = textract.process(
-                        f'cache/{pmid}.pdf',
-                        extension='pdf',
-                        method='pdftotext',
-                        encoding="utf_8"
-                    ).decode()
-
-                    result[pmid] = process_article(article_text)
-                except (UnicodeDecodeError, ShellError):
-                    logging.error(
-                        'encountered error, while extracting text from '
-                        '%s.pdf, skipping...', pmid)
-                    result[pmid] = None
-            else:
-                pmids_without_texts.append(pmid)
+                result[pmid] = process_article(article_text)
+            except (UnicodeDecodeError, ShellError):
+                logging.error(
+                    'encountered error, while extracting text from '
+                    '%s.pdf, skipping...', pmid)
                 result[pmid] = None
+        else:
+            pmids_without_texts.append(pmid)
+            result[pmid] = None
     with open('cache/pmids_without_full_texts.txt', 'w',
               encoding='utf-8') as f:
         f.write('\n'.join(pmids_without_texts))
