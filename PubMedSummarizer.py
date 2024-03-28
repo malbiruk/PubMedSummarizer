@@ -19,9 +19,9 @@ import httpx
 import metapub
 import nltk
 import textract
-from textract.exceptions import ShellError
 import torch
 from Bio import Entrez, Medline
+from config import EMBEDDING_MODEL, GPT_MODEL, PROMPT, TEMPERATURE
 from dotenv import load_dotenv
 from openai import OpenAI
 from rich.console import Console
@@ -29,8 +29,7 @@ from rich.logging import RichHandler
 from rich_argparse import RichHelpFormatter
 from scidownl import scihub_download
 from sentence_transformers import SentenceTransformer, util
-
-from config import EMBEDDING_MODEL, GPT_MODEL, PROMPT, TEMPERATURE
+from textract.exceptions import ShellError
 
 load_dotenv()
 
@@ -360,7 +359,8 @@ def gpt_process_query(messages: list,
     return answer.split('\n')
 
 
-def truncate_input(model: str, user_prompt: str, prev_messages: list) -> tuple:
+def truncate_input(model: str, user_prompt: str, prev_messages: list,
+                   n_symbols_for_chat: int = 0) -> tuple:
     '''
     truncate input message if the dialogue exceeds context window of the model
     '''
@@ -385,7 +385,8 @@ def truncate_input(model: str, user_prompt: str, prev_messages: list) -> tuple:
         if len_messages > max_tokens * 4:
             user_prompt = None
         else:
-            user_prompt = user_prompt[:(max_tokens * 4 - len_messages)]
+            user_prompt = user_prompt[:(max_tokens * 4 - len_messages
+                                        - n_symbols_for_chat)]
         logger.warning('Truncated prompt in order to fit in context window.')
         truncated = True
 
@@ -446,7 +447,8 @@ def gpt_generate_summary(messages: list,
                 user_prompt += f'Abstract:\n{cont}\n\n'
 
     messages = [messages[0]]
-    user_prompt, truncated = truncate_input(model, user_prompt, messages)
+    user_prompt, truncated = truncate_input(model, user_prompt, messages,
+                                            2000)
     messages.append({'role': 'user', 'content': user_prompt})
     answer = chat_completion_request(messages, model, temperature)
     messages.append({'role': 'assistant', 'content': answer})
