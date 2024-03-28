@@ -97,11 +97,11 @@ def sidebar() -> object:
 
         n_queries = st.slider('Generate ___n___ optimized queries '
                               'from input query',
-                              1, 10, 5)
+                              1, 10, 3)
 
         if not use_pmids_list:
             n_articles = st.slider('Retrieve top ___n___ articles per query',
-                                   5, 60, 30, 5)
+                                   5, 60, 20, 5)
             filter_by_year = st.toggle('Filter by publication date')
             if filter_by_year:
                 from_year = st.slider(
@@ -141,13 +141,13 @@ def sidebar() -> object:
             overlap = st.slider('Chunks overlap, %', 0, 50, 30, 5)
             overlap = round(overlap / 100 * chunk_size)
 
-    st.header('Model')
+    st.header('Model', anchor=False)
     col1, col2 = st.columns([1,1])
     with col1:
         model_name = st.selectbox('GPT model',
                                   ['gpt-3.5-turbo (16k)',
                                    # 'gpt-4-32k (32k)',
-                                   'gpt-4 (8k)',
+                                   # 'gpt-4 (8k)',
                                    'gpt-4-turbo-preview (128k)',
                                    ])
 
@@ -360,7 +360,7 @@ def chat_window(session_state: st.session_state, settings: Settings) -> None:
     '''
     create chat window and allow user to chat with the model
     '''
-    st.header('Chat')
+    st.header('Chat', anchor=False)
     with st.container():
         messages_box = st.container(height=500)
         for message in st.session_state.messages:
@@ -406,7 +406,7 @@ def main():
 
     initialize_session_state()
 
-    st.header('Search')
+    st.header('Search', anchor=False)
     # st.write('')
 
     col1, col2 = st.columns([10, 1])
