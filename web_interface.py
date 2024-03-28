@@ -8,15 +8,14 @@ from dataclasses import make_dataclass
 from datetime import datetime
 from typing import TypeVar
 
-import streamlit as st
-from sentence_transformers import SentenceTransformer
-
 import config
+import streamlit as st
 from PubMedSummarizer import (chat_completion_request, extract_terms,
                               get_abstracts, get_article_texts,
                               get_context_from_articles, gpt_generate_summary,
                               gpt_identify_relevant, gpt_process_query,
                               initialize_cache, messages_to_human_readable)
+from sentence_transformers import SentenceTransformer
 
 Settings = TypeVar('Settings')
 
@@ -141,8 +140,16 @@ def sidebar() -> object:
             overlap = st.slider('Chunks overlap, %', 0, 50, 30, 5)
             overlap = round(overlap / 100 * chunk_size)
 
+        st.divider()
+        _, col, _ = st.columns([.6, 1, .6])
+        with col:
+            st.page_link('https://docs.google.com/document/d/'
+                         '1tPuDn9DEBFUQnBLNKiRs4gm4tke76wznKbr1r2tiQ48',
+                         label='User guide', icon="📚"
+                         )
+
     st.header('Model', anchor=False)
-    col1, col2 = st.columns([1,1])
+    col1, col2 = st.columns([1, 1])
     with col1:
         model_name = st.selectbox('GPT model',
                                   ['gpt-3.5-turbo (16k)',
@@ -154,7 +161,7 @@ def sidebar() -> object:
     model_name = model_name.split(maxsplit=1)[0]
 
     with col2:
-    # if st.toggle('Modify temperature (defaul=0.2)'):
+        # if st.toggle('Modify temperature (defaul=0.2)'):
         temperature = st.number_input('Temperature', 0., 1., .2, .1)
 
     prompt = config.PROMPT
