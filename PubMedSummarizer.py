@@ -19,6 +19,7 @@ import httpx
 import metapub
 import nltk
 import textract
+from textract.exceptions import ShellError
 import torch
 from Bio import Entrez, Medline
 from dotenv import load_dotenv
@@ -250,9 +251,9 @@ def get_article_texts(id_list: List[str]) -> dict:
                     ).decode()
 
                     result[pmid] = process_article(article_text)
-                except UnicodeDecodeError:
+                except (UnicodeDecodeError, ShellError):
                     logging.error(
-                        'encountered UnicodeDecodeError, while processing '
+                        'encountered error, while extracting text from '
                         '%s.pdf, skipping...', pmid)
                     result[pmid] = None
             else:
