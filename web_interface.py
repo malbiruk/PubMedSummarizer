@@ -209,8 +209,8 @@ def initialize_session_state() -> None:
         st.session_state.clicked = False
 
     # is needed to run search on user_query change
-    if 'prev_query' not in st.session_state:
-        st.session_state.prev_query = ''
+    # if 'prev_query' not in st.session_state:
+    #     st.session_state.prev_query = ''
 
     # messages which are displayed in chat box
     if "messages" not in st.session_state:
@@ -237,7 +237,7 @@ def publications_search_and_analysis(session_state: st.session_state,
     '''
     runs publications search, analysis, and summary generation
     '''
-    session_state.prev_query = user_query
+    # session_state.prev_query = user_query
     session_state.opt_queries_to_pmids = {}
     session_state.truncated = False
     truncated_1 = False
@@ -294,7 +294,7 @@ def publications_search_and_analysis(session_state: st.session_state,
                 st.write('Getting relevant PMIDs...')
 
             relevant_pmids, truncated_1 = (
-                pmid_list if settings.use_pmids_list
+                (pmid_list, False) if settings.use_pmids_list
                 else gpt_identify_relevant(
                     messages,
                     query,
@@ -416,18 +416,16 @@ def main():
     st.header('Search', anchor=False)
     # st.write('')
 
-    col1, col2 = st.columns([10, 1])
-    with col1:
-        user_query = st.text_input(
-            'Search',
-            placeholder='Enter your scientific question, '
-            'query or keywords',
-            label_visibility='collapsed')
-    with col2:
-        st.button('Run', on_click=click_button, type='primary')
+    user_query = st.text_area(
+        'Search',
+        placeholder='Enter your scientific question, '
+        'query or keywords',
+        label_visibility='collapsed')
 
-    if user_query and (st.session_state.prev_query != user_query):
-        click_button()
+    st.button('Run', on_click=click_button, type='primary')
+
+    # if user_query and (st.session_state.prev_query != user_query):
+    #     click_button()
 
     if st.session_state.clicked:
         publications_search_and_analysis(st.session_state,
