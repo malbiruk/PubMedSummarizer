@@ -7,15 +7,20 @@ import re
 from dataclasses import make_dataclass
 from datetime import datetime
 from typing import TypeVar
+from pathlib import Path
 
 import config
 import streamlit as st
+import streamlit.components.v1 as components
+from knowledge_graph import (draw_knowledge_graph, knowledge_graph_with_gpt,
+                             ner_with_gpt)
 from PubMedSummarizer import (chat_completion_request, extract_terms,
                               get_abstracts, get_article_texts,
                               get_context_from_articles, gpt_generate_summary,
                               gpt_identify_relevant, gpt_process_query,
                               initialize_cache, messages_to_human_readable)
 from sentence_transformers import SentenceTransformer
+from streamlit_tags import st_tags_sidebar
 
 Settings = TypeVar('Settings')
 
@@ -38,7 +43,6 @@ def customize_page_appearance() -> None:
 
 
 def click_button() -> None:
-    # pylint: disable=missing-function-docstring
     st.session_state.clicked = True
 
 
@@ -60,7 +64,6 @@ def sidebar() -> object:
     creates sidebar with settings, returns settings as a dataclass
     (basically a dict, where keys are attributes)
     '''
-    # pylint: disable=too-many-locals
     with st.sidebar:
         # st.title('Settings')
 
@@ -77,6 +80,26 @@ def sidebar() -> object:
         overlap = None
         filter_by_year = False
         filter_by_pub_type = False
+        entities = [
+            'gene',
+            'disease',
+            'chemical',
+            'cell line',
+            'organism',
+            'tissue',
+            'genetic variant',
+            'biological process',
+            'cell compartment',
+        ]
+        relations = [
+            'associated with',
+            'treats',
+            'interacts with',
+            'inhibits',
+            'activates'
+        ]
+        relation_to_color = {'activates': 'palegreen',
+                             'inhibits': 'lightsalmon'}
 
         use_full_article_texts = st.toggle(
             'Use full articles\' texts',
@@ -96,7 +119,7 @@ def sidebar() -> object:
 
         n_queries = st.slider('Generate ___n___ optimized queries '
                               'from input query',
-                              1, 10, 3)
+                              1, 10, 7)
 
         if not use_pmids_list:
             n_articles = st.slider('Retrieve top ___n___ articles per query',
@@ -140,6 +163,26 @@ def sidebar() -> object:
             overlap = st.slider('Chunks overlap, %', 0, 50, 30, 5)
             overlap = round(overlap / 100 * chunk_size)
 
+        should_draw_knowledge_graph = st.toggle(
+            'Draw a knowledge graph', value=True,
+            help='Creates an interactive knowledge graph '
+            'from instances identified by NER in generated summary.')
+
+        if should_draw_knowledge_graph:
+            if st.toggle('Edit recognized entities'):
+                entities = st_tags_sidebar(entities,
+                                           label='Recognized entities')
+            if st.toggle('Edit recognized relations'):
+                relations = st_tags_sidebar(relations,
+                                            label='Recognized relations')
+                st.markdown('Relation colors')
+                relation_to_color = st.data_editor(
+                    relation_to_color,
+                    column_config={
+                        '_index': 'relation type',
+                        'value': 'color'},
+                    num_rows='dynamic')
+
         st.divider()
         _, col, _ = st.columns([.6, 1, .6])
         with col:
@@ -151,12 +194,9 @@ def sidebar() -> object:
     st.header('Model', anchor=False)
     col1, col2 = st.columns([1, 1])
     with col1:
-        model_name = st.selectbox('GPT model',
-                                  ['gpt-3.5-turbo (16k)',
-                                   # 'gpt-4-32k (32k)',
-                                   # 'gpt-4 (8k)',
-                                   'gpt-4-turbo-preview (128k)',
-                                   ])
+        model_name = st.selectbox(
+            'GPT model',
+            ['gpt-4-turbo-preview (128k)', 'gpt-3.5-turbo (16k)'])
 
     model_name = model_name.split(maxsplit=1)[0]
 
@@ -186,6 +226,10 @@ def sidebar() -> object:
         'n_chunks': n_chunks,
         'chunk_size': chunk_size,
         'overlap': overlap,
+        'should_draw_knowledge_graph': should_draw_knowledge_graph,
+        'entities': entities,
+        'relations': relations,
+        'relation_to_color': relation_to_color,
     }
     settings_class = make_dataclass('Settings', settings.keys())
     return settings_class(**settings)
@@ -207,10 +251,6 @@ def initialize_session_state() -> None:
     # starts search and analysis of publications
     if 'clicked' not in st.session_state:
         st.session_state.clicked = False
-
-    # is needed to run search on user_query change
-    # if 'prev_query' not in st.session_state:
-    #     st.session_state.prev_query = ''
 
     # messages which are displayed in chat box
     if "messages" not in st.session_state:
@@ -352,6 +392,24 @@ def publications_search_and_analysis(session_state: st.session_state,
             settings.model_name,
             settings.temperature)
 
+        if settings.should_draw_knowledge_graph:
+            status.update(label='Performing Named Entity Recognition...')
+            st.write('Performing Named Entity Recognition...')
+            entities_json = ner_with_gpt(
+                gpt_summary,
+                gpt_model=settings.model_name,
+                entities=settings.entities)
+
+            status.update(label='Generating knowledge graph...')
+            st.write('Generating knowledge graph...')
+            edges = knowledge_graph_with_gpt(gpt_summary,
+                                             entities_json,
+                                             settings.relations,
+                                             settings.model_name)
+            draw_knowledge_graph(edges,
+                                 entities_json,
+                                 settings.relation_to_color)
+
         status.update(label='Done!', state='complete', expanded=False)
         st.write('Done!')
 
@@ -466,6 +524,12 @@ def main():
                                'PubMedSummarizer_messages.txt',
                                help='Includes messages generated during '
                                'the search process')
+
+            if settings.should_draw_knowledge_graph and Path('knowledge_graph.html').is_file():
+                st.header('Knowledge graph', anchor=False)
+                with open('knowledge_graph.html', encoding='utf-8') as f:
+                    source_code = f.read()
+                components.html(source_code, height=610)
 
         else:
             st.error('__Nothing was found.__\n\nTry to adjust '

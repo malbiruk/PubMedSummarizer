@@ -11,3 +11,5 @@ streamlit==1.32.2
 textract
 torch==2.2.1
 httpx[socks]==0.27.0
+streamlit_tags
+pyvis
