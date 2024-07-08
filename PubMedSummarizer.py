@@ -370,7 +370,8 @@ def truncate_input(model: str, user_prompt: str, prev_messages: list,
         'gpt-3.5-turbo': 16385,
         'gpt-4-32k': 32768,
         'gpt-4': 8192,
-        'gpt-4-turbo-preview': 128000
+        'gpt-4-turbo-preview': 128000,
+        'gpt-4o': 128000
     }
 
     max_tokens = model_name_to_max_tokens[model]
