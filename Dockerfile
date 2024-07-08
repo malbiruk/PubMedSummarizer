@@ -5,6 +5,7 @@ RUN apt update && apt install -yq git g++ poppler-utils && rm -rf /var/lib/apt/l
 WORKDIR /streamlit
 COPY requirements.txt /streamlit
 RUN pip install --upgrade pip
+RUN pip install --upgrade lxml_html_clean
 RUN pip install -r requirements.txt
 
 EXPOSE 8505
