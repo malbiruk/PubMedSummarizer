@@ -196,7 +196,7 @@ def sidebar() -> object:
     with col1:
         model_name = st.selectbox(
             'GPT model',
-            ['gpt-4-turbo-preview (128k)', 'gpt-3.5-turbo (16k)'])
+            ['gpt-4o (128k)', 'gpt-4-turbo-preview (128k)', 'gpt-3.5-turbo (16k)'])
 
     model_name = model_name.split(maxsplit=1)[0]
 
