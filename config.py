@@ -25,9 +25,11 @@ will be to convert this input (could be a question, query or keywords) to \
 Notice that the current date is {CURRENT_DATE} for searches \
 like "last n years". Novel {N_QUERIES} queries should be scientific, \
 concise, and clear. They should be focused on a bit of different details of \
-the initial query. Try to use synonyms and do not repeat the same words \
-in the novel queries.
-Answer with {N_QUERIES} optimized queries separated by newlines.
+the initial query. Try to use synonyms and/or wider terms and do not repeat the same words \
+in the novel queries. Do not use many AND in query as it limits the amount of \
+found articles, just rephrase the initial query.
+Answer with {N_QUERIES} optimized queries separated by newlines. \
+Don't enumerate them!
 
 Example 1:
 input: "CREATE_QUERY

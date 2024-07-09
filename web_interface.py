@@ -92,7 +92,7 @@ def sidebar() -> object:
             'cell compartment',
         ]
         relations = [
-            'associated with',
+            # 'associated with',
             'treats',
             'interacts with',
             'inhibits',

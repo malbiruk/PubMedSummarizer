@@ -76,7 +76,9 @@ Generate a knowledge graph from the provided text and entities. \
 Each relationship should be categorized with one of the following relations: \
 {relations_string}. \
 Use short names for GENE enteties and full names for CHEMICAL entities. \
-Remove synonyms and antonyms to ensure clarity. Try to avoid orphans/islands in the graph.
+Remove synonyms and antonyms to ensure clarity. Try to avoid orphans/islands in the graph. \
+Use "activates"/"inhibits" in relations if possible, as it is more informative than \
+"associated with", "interacts", and so on. Create only one-way relations.
 
 The output should be a JSON object representing the knowledge graph, with the following structure:
 """ + """
