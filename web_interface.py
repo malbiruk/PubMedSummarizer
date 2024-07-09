@@ -400,8 +400,8 @@ def publications_search_and_analysis(session_state: st.session_state,
                 gpt_model=settings.model_name,
                 entities=settings.entities)
 
-            status.update(label='Generating knowledge graph...')
-            st.write('Generating knowledge graph...')
+            status.update(label='Generating a knowledge graph...')
+            st.write('Generating a knowledge graph...')
             edges = knowledge_graph_with_gpt(gpt_summary,
                                              entities_json,
                                              settings.relations,
