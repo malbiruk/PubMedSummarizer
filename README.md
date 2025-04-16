@@ -22,12 +22,12 @@ Originally built with GPT-3.5, the app now supports **GPT-4o** and demonstrates 
 
 ## 🛠️ Tech Stack
 
-- Python  
-- Streamlit  
-- OpenAI API (GPT-3.5 / GPT-4o)  
-- SentenceTransformers for embedding and semantic retrieval  
-- Entrez / PubMed API  
-- Custom logic for knowledge graph and context extraction  
+- Python
+- Streamlit
+- OpenAI API (GPT-3.5 / GPT-4o)
+- SentenceTransformers for embedding and semantic retrieval
+- Entrez / PubMed API
+- Custom logic for knowledge graph and context extraction
 
 ## 🚀 Quickstart
 
@@ -68,3 +68,7 @@ Overall, the integration of AI in medicine showcases promising advancements in c
 Additionally, the effectiveness of digital mental health interventions for adolescents and young people has been explored, showing potential in addressing mental health disorders early in life and reaching underserved clinical populations (PMID: 33913817). Computerized cognitive behavioral therapy has been effective in managing anxiety and depression in this population, emphasizing the importance of interventions with an in-person element or professional involvement for greater effectiveness (PMID: 33913817).
 
 While digital mental health interventions offer benefits such as increased accessibility, reduced stigma, and improved user engagement, there are also challenges to address, including concerns about privacy, developer credibility, and the need for more rigorous studies to confirm their effectiveness and cost-effectiveness, especially in low-resource settings (PMID: 31333198, 35612165, 33913817). Continued research and development in this field are necessary to optimize the user experience, assess the long-term effectiveness, and ensure sustainable implementation of digital mental health interventions across diverse populations (PMID: 31333198, 35612165, 33913817)."
+
+
+## App screenshot with knowledge graph
+![App Screenshot](example/screenshot.png)

@@ -1,8 +1,10 @@
-cache/*
+cache
 __pycache__*
 gpt_*
 .env
 out.log
 default/
+lib/
+*.html
 .remote-sync.json
 .nvim
