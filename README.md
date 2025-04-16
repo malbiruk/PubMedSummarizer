@@ -1,23 +1,42 @@
 # PubMedSummarizer
-## Purpose
-Automatically search for information in PubMed, obtain articles and/or abstracts and generate summary with links to information sources from them using GPT-3.5.
 
-## Pipeline
-1. User inputs their query (optional: and list of PMIDs using `--pmid_list` flag, in that case the searching part is skipped, and program will analyze articles specified, regarding the query)
-2. GPT-3.5 processes it to make several optimized queries for PubMed
-3. The program passes this optimal queries to PubMed search and returns abstracts of top results
-4. GPT-3.5 "reads" these abstracts, picks only relevant ones and returns their PMIDs
-5. Optional time consuming steps:
-    1. The program finds full articles of these relevant PMIDs in PMC and Sci-Hub if not found in PMC
-    6. The program tokenizes articles by sentences and embeds it as well as query provided in the 2nd point and performs semantic search, returning top 5 found context chunks with their score (cosine similarity) from each of the articles. Also if can't find/download article, it just returns the abstract of corresponding article.
-7. GPT-3.5 gets all these article chunks, cosine similarity scores, and abstracts along with their PMIDs and in response generates brief summary with relevant information (obtained only from these abstracts and articles), answering to the initial query (point 1) and provides corresponding PMIDs for each piece of information it writes in the answer.
-8. After that GPT works just as a chat-bot with all these context
+**PubMedSummarizer** is a biomedical literature assistant that searches PubMed, retrieves abstracts or full articles, and generates summaries in response to user questions using OpenAI's GPT models. It includes both CLI and Streamlit-based interactive modes, and supports advanced retrieval options and custom prompts.
 
-## Installation
-`docker-compose build && docker-compose up`<br>
-Default address: `http://0.0.0.0:8505`
+Originally built with GPT-3.5, the app now supports **GPT-4o** and demonstrates an early, custom implementation of Retrieval-Augmented Generation (RAG) — without relying on frameworks like LangChain.
 
-## Examples
+## ✨ Key Features
+
+- **Smart PubMed Querying**: Enter a natural language question, and the system will auto-generate optimized PubMed search queries using GPT.
+- **Custom PMIDs Support**: You can skip the search and directly provide a list of PMIDs to analyze.
+- **Abstract & Full-Text Retrieval**:
+  - Fetches abstracts by default.
+  - Optionally retrieves full articles from **PubMed Central (PMC)** or other public sources if available.
+- **Semantic Chunk-Based Retrieval**: When full texts are used, the system performs sentence-level chunking and semantic search to extract the most relevant information for summarization.
+- **Configurable Prompt Templates**: Modify prompt structure directly from the Streamlit UI.
+- **Knowledge Graph Generation**: Automatically builds a simple knowledge graph of concepts and relations found in the retrieved documents.
+- **Detailed Output**: The final summary includes in-text citations with PMIDs and highlights where each piece of information came from.
+- **Multiple Search Parameters**: Fine-tune the PubMed query logic and context selection for each run.
+- **Streamlit + CLI Support**: Interact via a user-friendly web interface or command-line.
+
+> 💬 This project was created before GPT function calling and agents were available, using a fully custom RAG setup.
+
+## 🛠️ Tech Stack
+
+- Python  
+- Streamlit  
+- OpenAI API (GPT-3.5 / GPT-4o)  
+- SentenceTransformers for embedding and semantic retrieval  
+- Entrez / PubMed API  
+- Custom logic for knowledge graph and context extraction  
+
+## 🚀 Quickstart
+
+```bash
+docker-compose build
+docker-compose up
+```
+
+## 🧪 Examples (with GPT 3.5)
 ### AI applications in medicine
 #### Input
 `python PubMedSummarizer.py "AI applications in medicine"`
