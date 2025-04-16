@@ -32,9 +32,9 @@ Originally built with GPT-3.5, the app now supports **GPT-4o** and demonstrates 
 ## 🚀 Quickstart
 
 ```bash
-docker-compose build
-docker-compose up
+docker compose up --build
 ```
+Then view the app at `http://0.0.0.0:8505/`
 
 ## 🧪 Examples (with GPT 3.5)
 ### AI applications in medicine
