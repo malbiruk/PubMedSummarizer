@@ -30,11 +30,15 @@ Originally built with GPT-3.5, the app now supports **GPT-4o** and demonstrates 
 - Custom logic for knowledge graph and context extraction
 
 ## 🚀 Quickstart
-
+1. Save your OpenAI key to `.env`:
+```bash
+OPENAI_API_KEY=sk-your-api-key
+```
+2. Build and start docker:
 ```bash
 docker compose up --build
 ```
-Then view the app at `http://0.0.0.0:8505/`
+3. View the app at `http://0.0.0.0:8505/`
 
 ## 🧪 Examples (with GPT 3.5)
 ### AI applications in medicine
